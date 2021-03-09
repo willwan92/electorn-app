@@ -31,7 +31,7 @@
 </template>
 
 <script>
-  import xlsx from 'node-xlsx'
+  // import xlsx from 'node-xlsx'
 
   export default {
     data () {
@@ -70,9 +70,9 @@
       })
     },
     methods: {
-      parseExcel() {
+      parseExcel () {
         // Parse a file
-        const workSheetsFromFile = xlsx.parse(`${__dirname}/myFile.xlsx`)
+        // const workSheetsFromFile = xlsx.parse(`${__dirname}/myFile.xlsx`)
       }
     }
   }
