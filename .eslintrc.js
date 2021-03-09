@@ -16,6 +16,7 @@ module.exports = {
     'html'
   ],
   'rules': {
+    "comma-dangle": ["error", "only-multiline"],
     // allow paren-less arrow functions
     'arrow-parens': 0,
     // allow async-await
