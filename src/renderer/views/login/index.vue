@@ -74,12 +74,10 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('Login', this.loginForm).then(() => {
+          setTimeout(() => {
             this.loading = false
             this.$router.push({ path: '/' })
-          }).catch(() => {
-            this.loading = false
-          })
+          }, 300)
         } else {
           console.log('error submit!!')
           return false
@@ -109,7 +107,7 @@ $light_gray:#eee;
       color: $light_gray;
       height: 47px;
       &:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0px 1000px $bg inset !important;
+        box-shadow: 0 0 0px 1000px $bg inset !important;
         -webkit-text-fill-color: #fff !important;
       }
     }

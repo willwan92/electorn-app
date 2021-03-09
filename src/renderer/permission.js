@@ -4,7 +4,7 @@ import NProgress from 'nprogress' // Progress 进度条
 import 'nprogress/nprogress.css'// Progress 进度条样式
 // import { Message } from 'element-ui'
 
-const whiteList = ['/login'] // 不重定向白名单
+// const whiteList = ['/login'] // 不重定向白名单
 router.beforeEach((to, from, next) => {
   NProgress.start()
   if (store.getters.token) {
@@ -16,12 +16,14 @@ router.beforeEach((to, from, next) => {
       next()
     }
   } else {
-    if (whiteList.indexOf(to.path) !== -1) {
-      next()
-    } else {
-      next('/login')
-      NProgress.done()
-    }
+    // if (whiteList.indexOf(to.path) !== -1) {
+    //   next()
+    // } else {
+    //   next('/login')
+    //   NProgress.done()
+    // }
+    next()
+    NProgress.done()
   }
 })
 
