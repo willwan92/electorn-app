@@ -74,7 +74,18 @@ export const constantRouterMap = [
     ]
   },
 
-  { path: '*', redirect: '/404', hidden: true }
+  {
+    path: '/deviceLib',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        name: 'deviceLib',
+        component: () => import('@/views/deviceLib/index'),
+        meta: { title: '设备双编库', icon: 'form' }
+      }
+    ]
+  }
 ]
 
 export default new Router({
