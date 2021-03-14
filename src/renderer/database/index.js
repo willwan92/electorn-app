@@ -1,26 +1,11 @@
-import { createRxDatabase, addRxPlugin } from 'rxdb'
-import { deviceSchema } from './schemas/device'
-import indexeddb from 'pouchdb-adapter-indexeddb'
+import Dexie from 'dexie'
 
-async function createDatabase () {
-  addRxPlugin(indexeddb)
-  const db = await createRxDatabase({
-    name: 'db',
-    adapter: 'indexeddb',
-    // password: 'admin' // optional
-  })
+const db = new Dexie('MainDatabase')
 
-  await db.addCollections({
-    devices: deviceSchema
-  })
+db.version(1).stores({
+  device: '++id, workplace, deviceName'
+})
 
-  return db
-}
+// db.device = db.table('device')
 
-let database
-export function getDatabase () {
-  if (!database) {
-    database = createDatabase()
-  }
-  return database
-}
+export default db
