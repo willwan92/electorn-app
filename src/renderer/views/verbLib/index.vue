@@ -4,12 +4,7 @@
       <el-col :span="16">
         <el-form :inline="true" size="small">
           <el-form-item>
-            <el-select v-model="workplace" placeholder="请选择工作地点">
-              <el-option v-for="item in workplaceList" :label="item" :key="item" :value="item"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-input class="inline" v-model="deviceName" placeholder="请输入设备名称"></el-input>
+            <el-input class="inline" v-model="verb" placeholder="请输入动词"></el-input>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleQuery">查询</el-button>
@@ -22,7 +17,7 @@
           action=""
           :show-file-list="false"
           :before-upload="handleUpload">
-          <el-button size="small">导入设备双编库</el-button>
+          <el-button size="small">导入动词库</el-button>
         </el-upload>
         <el-button
           type="primary"
@@ -37,9 +32,9 @@
     <el-table :data="tableData" v-loading.body="isLoading" element-loading-text="Loading" border fit highlight-current-row style="width: 100%;">
       <!-- <el-table-column align="center" label='序号' width="95" prop="index">
       </el-table-column> -->
-      <el-table-column label="工作地点" width="120" prop="workplace">
+      <el-table-column label="动词" width="120" prop="verb">
       </el-table-column>
-      <el-table-column label="设备标识牌名称" prop="deviceName">
+      <el-table-column label="对应设备" prop="nouns">
       </el-table-column>
       <el-table-column fixed="right"
         label="操作"
@@ -80,7 +75,6 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
-import { workplaceList } from '@/utils/constant'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -90,23 +84,11 @@ export default {
   data () {
     return {
       tableData: [],
-      workplace: '500kV蝶岭站',
-      deviceName: '',
-      workplaceList: Object.freeze(workplaceList),
+      verb: '',
       currentPage: 1,
       pagesize: 10,
       total: 0,
       isLoading: false
-    }
-  },
-  filters: {
-    statusFilter (status) {
-      const statusMap = {
-        published: 'success',
-        draft: 'gray',
-        deleted: 'danger'
-      }
-      return statusMap[status]
     }
   },
   created () {
@@ -114,12 +96,12 @@ export default {
   },
   methods: {
     deleteRow (row) {
-      this.$confirm(`确认要删除设备 ${row.deviceName} 吗？`, '提示', {
+      this.$confirm(`确认要删除动词搭配 ${row.verb} 吗？`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        db.device
+        db.verb
           .delete(row.id)
           .then(() => {
             this.$message.success('刪除成功')
@@ -151,21 +133,17 @@ export default {
     async fetchTableData () {
       this.isLoading = true
       // 获取总条数
-      db.device
-        .where('workplace')
-        .equals(this.workplace)
+      db.verb
         .filter(item => {
-          return item.deviceName.includes(this.deviceName)
+          return item.verb.includes(this.verb)
         })
         .count(num => {
           this.total = num
         })
       // 获取数据
-      const data = await db.device
-        .where('workplace')
-        .equals(this.workplace)
+      const data = await db.verb
         .filter(item => {
-          return item.deviceName.includes(this.deviceName)
+          return item.verb.includes(this.verb)
         })
         .offset(this.pagesize * (this.currentPage - 1))
         .limit(this.pagesize)
@@ -180,30 +158,29 @@ export default {
       }
     },
     async handleUpload (file) {
-      await db.device
+      // 如果表中有数据，先清空
+      await db.verb
         .count()
         .then(num => {
           if (num) {
-            db.device.clear()
+            db.verb.clear()
           }
         })
 
-      const deviceSheets = xlsx.parse(file.path)
-      // 插入数据库
-      deviceSheets.forEach(workplace => {
-        workplace.data.forEach((device, index) => {
-          if (index > 3 && device.length > 1) {
-            db.device.add({
-              workplace: workplace.name,
-              deviceName: device[1]
-            }).catch(error => {
-              console.log('Error: ' + (error.stack || error))
-            })
-          }
-        })
+      const verbSheets = xlsx.parse(file.path)
+      // // 插入数据库
+      verbSheets[0].data.forEach((item, index) => {
+        if (index > 2 && item.length > 2) {
+          db.verb.add({
+            verb: item[1],
+            nouns: item[2]
+          }).catch(error => {
+            this.$message.error('Error: ' + (error.stack || error))
+          })
+        }
       })
 
-      this.$message.success('设备双编库导入成功')
+      this.$message.success('动词库导入成功')
       this.fetchTableData()
       // 返回 false, 自行处理excel数据
       return false

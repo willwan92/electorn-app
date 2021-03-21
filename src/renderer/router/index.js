@@ -30,12 +30,12 @@ export const constantRouterMap = [
   {
     path: '/',
     component: Layout,
-    redirect: '/dashboard',
-    name: 'Dashboard',
+    redirect: '/home',
+    name: 'Home',
     hidden: true,
     children: [{
-      path: 'dashboard',
-      component: () => import('@/views/dashboard/index')
+      path: 'home',
+      component: () => import('@/views/home/index')
     }]
   },
 
@@ -62,19 +62,6 @@ export const constantRouterMap = [
   },
 
   {
-    path: '/form',
-    component: Layout,
-    children: [
-      {
-        path: 'index',
-        name: 'Form',
-        component: () => import('@/views/form/index'),
-        meta: { title: 'Form', icon: 'form' }
-      }
-    ]
-  },
-
-  {
     path: '/deviceLib',
     component: Layout,
     children: [
@@ -83,6 +70,18 @@ export const constantRouterMap = [
         name: 'deviceLib',
         component: () => import('@/views/deviceLib/index'),
         meta: { title: '设备双编库', icon: 'form' }
+      }
+    ]
+  },
+  {
+    path: '/verbLib',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        name: 'verbLib',
+        component: () => import('@/views/verbLib/index'),
+        meta: { title: '动词库', icon: 'form' }
       }
     ]
   }
