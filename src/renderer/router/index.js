@@ -60,7 +60,33 @@ export const constantRouterMap = [
       }
     ]
   },
-
+  {
+    path: '/rules',
+    component: Layout,
+    name: 'rules',
+    redirect: '/rules/time',
+    meta: { title: '通用规则', icon: 'form' },
+    children: [
+      {
+        path: 'time',
+        name: 'time',
+        component: () => import('@/views/rules/time/index'),
+        meta: { title: '操作时间规则', icon: 'form' }
+      },
+      {
+        path: 'taskName',
+        name: 'taskName',
+        component: () => import('@/views/rules/task/index'),
+        meta: { title: '任务名称规则', icon: 'form' }
+      },
+      {
+        path: 'simpleRule',
+        name: 'simpleRule',
+        component: () => import('@/views/rules/simpleRule/index'),
+        meta: { title: '简单规则', icon: 'form' }
+      }
+    ]
+  },
   {
     path: '/deviceLib',
     component: Layout,

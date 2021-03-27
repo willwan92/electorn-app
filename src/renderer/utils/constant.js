@@ -12,6 +12,30 @@ const workplaceList = [
   '35kV大八站'
 ]
 
+const operatorOptions = [
+  {
+    label: '需包含',
+    value: 'in'
+  },
+  {
+    label: '不可包含',
+    value: 'notIn'
+  },
+  {
+    label: '要等于',
+    value: 'equal'
+  },
+  {
+    label: '要以关键字开头',
+    value: 'start'
+  },
+  {
+    label: '要以关键字结尾',
+    value: 'end'
+  }
+]
+
 export {
-  workplaceList
+  workplaceList,
+  operatorOptions
 }
