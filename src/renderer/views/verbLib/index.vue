@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div>
     <el-row>
       <el-col :span="16">
         <el-form :inline="true" size="small">
