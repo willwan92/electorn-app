@@ -27,12 +27,8 @@ export default {
   },
   methods: {
     getBreadcrumb () {
-      let matched = this.$route.matched.filter(item => item.name)
-      const first = matched[0]
-      if (first && first.name !== 'home') {
-        matched = [{ path: '/home', meta: { title: '首页' } }].concat(matched)
-      }
-      this.levelList = matched.filter(item => Boolean(item.meta.title))
+      let matched = this.$route.matched.filter(item => item.meta && item.meta.title)
+      this.levelList = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)
     }
   }
 }
