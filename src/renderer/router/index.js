@@ -29,16 +29,20 @@ export const constantRouterMap = [
   },
   {
     path: '/',
-    component: Layout,
-    redirect: '/home',
-    name: 'Home',
-    hidden: true,
-    children: [{
-      path: 'home',
-      component: () => import('@/views/home/index')
-    }]
+    redirect: '/home/index'
   },
-
+  {
+    path: '/home',
+    name: 'Home',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/home/index'),
+        meta: { title: '首页', icon: 'home' }
+      }
+    ]
+  },
   {
     path: '/example',
     component: Layout,
