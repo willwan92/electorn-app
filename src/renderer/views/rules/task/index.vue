@@ -9,14 +9,22 @@
           <el-option value="notIn" label="不可包含"></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="关键字：">
-        <div v-for="(item, index) in form.keywords" :key="index" style="margin-bottom: 6px;">
-          <el-input v-model="form.keywords[index]" autocomplete="off"></el-input>
-          <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
-          <el-button v-else icon="el-icon-minus" @click="handleRemoveClick(index)" type="danger" circle></el-button>
-        </div>
+      <el-form-item label="关键字：" class="keywords">
+        <el-row  v-for="(item, index) in form.keywords" :key="index" style="margin-bottom: 6px;">
+          <el-col :span="10">
+            <el-input v-model="form.keywords[index].keyword" placeholder="请输入关键字"></el-input>
+          </el-col>
+          <el-col class="line" :span="2">：</el-col>
+          <el-col :span="10">
+            <el-input v-model="form.keywords[index].errorMsg" placeholder="请输入错误信息"></el-input>
+          </el-col>
+          <el-col  class="button" :span="2">
+            <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
+            <el-button v-else icon="el-icon-minus" @click="handleRemoveClick(index)" type="danger" circle></el-button>
+          </el-col>
+        </el-row>
       </el-form-item>
-      <el-form-item label-width="" >
+      <el-form-item label-width="">
         <el-button type="primary" @click="handleSubmit">保存</el-button>
       </el-form-item>
     </el-form>
@@ -31,7 +39,10 @@ export default {
     return {
       form: {
         operator: 'notIn',
-        keywords: ['']
+        keywords: [{
+          keyword: '',
+          errorMsg: '任务名称错误'
+        }]
       }
     }
   },
@@ -46,7 +57,10 @@ export default {
       }
     },
     handleAddClick () {
-      this.form.keywords.push('')
+      this.form.keywords.push({
+        keyword: '',
+        errorMsg: '任务名称错误'
+      })
     },
     handleRemoveClick (index) {
       this.form.keywords.splice(index, 1)
@@ -70,7 +84,18 @@ export default {
 .page-form {
   width: 600px;
   .el-select, .el-input {
-    width: 400px;
+    width: 500px;
+  }
+  .keywords {
+    .line {
+      text-align: center;
+    }
+    .button {
+      text-align: right;
+    }
+    .el-input {
+      width: 100%;
+    }
   }
 }
 </style>
