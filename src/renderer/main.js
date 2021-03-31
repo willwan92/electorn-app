@@ -16,6 +16,7 @@ import '@/permission' // permission control
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 
 Vue.use(ElementUI, { locale })
+Vue.prototype.$ELEMENT = { size: 'small' }
 
 Vue.config.productionTip = false
 
