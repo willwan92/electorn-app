@@ -4,7 +4,7 @@
     <breadcrumb></breadcrumb>
     <el-dropdown class="avatar-container" trigger="click">
       <div class="avatar-wrapper">
-        <el-avatar shape="square" :size="size" :src="squareUrl"></el-avatar>
+        <el-avatar shape="square" :src="squareUrl"></el-avatar>
         <i class="el-icon-caret-bottom"></i>
       </div>
       <el-dropdown-menu class="user-dropdown" slot="dropdown">
