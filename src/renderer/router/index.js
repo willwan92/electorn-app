@@ -63,10 +63,16 @@ export const constantRouterMap = [
         meta: { title: '任务名称规则', icon: 'form' }
       },
       {
-        path: 'basicRule',
-        name: 'basicRule',
-        component: () => import('@/views/rules/basicRule/index'),
-        meta: { title: '步骤基础规则', icon: 'form' }
+        path: 'simpleRule',
+        name: 'simpleRule',
+        component: () => import('@/views/rules/simpleRule/index'),
+        meta: { title: '步骤简单规则', icon: 'form' }
+      },
+      {
+        path: 'complexRule',
+        name: 'complexRule',
+        component: () => import('@/views/rules/complexRule/index'),
+        meta: { title: '步骤复杂规则', icon: 'form' }
       }
     ]
   },
