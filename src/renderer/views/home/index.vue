@@ -53,6 +53,8 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
+// import { stepOptions, operatorOptions } from '@/utils/constant'
+import { strUtils } from '@/utils/check'
 
 export default {
   name: 'home',
@@ -67,7 +69,8 @@ export default {
       isUploading: false,
       isLoading: false,
       timeRule: null,
-      nameRule: null
+      nameRule: null,
+      simpleRule: [],
     }
   },
   created () {
@@ -115,37 +118,153 @@ export default {
       this.timeRule = await db.timeRule.get('gt')
       this.nameRule = await db.nameRule.get('notIn')
       const operatingOrder = await db.operatingOrder.toArray()
-      operatingOrder.forEach(item => {
-        this.checkTime(item)
-        this.checkTaskName(item)
+      const promises = operatingOrder.map(async order => {
+        await this.checkTime(order)
+        await this.checkTaskName(order)
+        await this.checkSteps(order)
       })
+      await Promise.all(promises)
       this.handleQuery()
       this.isUploading = false
     },
-    addCheckResult (operatingOrder, errorMsg) {
+    async validateRule ({ order, stepType, stepIndex, subIndex }) {
+      let valid = false
+      let keywords
+      const hasSubIndex = subIndex !== undefined
+      let step = hasSubIndex ? order.steps[stepIndex][subIndex] : order.steps[stepIndex]
+      this.simpleRule = await db.simpleRule.toArray()
+      this.simpleRule.filter(rule => {
+        // 获取与步骤类型相同的规则
+        return rule.step === stepType
+      }).forEach(async rule => { // 遍历规则
+        keywords = rule.keywords
+        // 遍历规则中的关键字
+        for (let i = 0, len = keywords.length; i < len; i++) {
+          valid = strUtils[rule.operator](step, keywords[i])
+          if (valid) {
+            // 如果有符合一个关键字，跳出该循环
+            break
+          }
+        }
+        if (!valid) {
+          // 如果所有关键字都不符合，将该步骤添加到校核结果中
+          await this.addCheckResult({
+            order,
+            stepNum: hasSubIndex ? `${stepIndex + 1}.${subIndex + 1}` : stepIndex + 1,
+            step: step,
+            errorMsg: rule.errorMsg
+          })
+        }
+      })
+    },
+    async checkSteps (order) {
+      const promises = order.steps.map(async (step, index) => {
+        if (index === 0) {
+          // 第一步
+          await this.validateRule({
+            order,
+            stepType: 'first',
+            stepIndex: index
+          })
+          // 所有步骤
+          await this.validateRule({
+            order,
+            stepType: 'all',
+            stepIndex: index
+          })
+        } else if (Array.isArray(step)) {
+          // 包含子步骤的步骤
+          step.forEach(async (item, subIndex) => {
+            if (subIndex === 0) {
+              // 母步骤
+              await this.validateRule({
+                order,
+                stepType: 'sub-first',
+                stepIndex: index,
+                subIndex: subIndex
+              })
+            } else if (index === (order.steps.length - 1) && subIndex === (step.length - 1)) {
+              // 最后一步
+              await this.validateRule({
+                order,
+                stepType: 'last',
+                stepIndex: index,
+                subIndex: subIndex
+              })
+            } else {
+              // 其他步骤
+              await this.validateRule({
+                order,
+                stepType: 'other',
+                stepIndex: index,
+                subIndex: subIndex
+              })
+            }
+            // 所有步骤
+            await this.validateRule({
+              order,
+              stepType: 'all',
+              stepIndex: index,
+              subIndex: subIndex
+            })
+          })
+        } else if (index === (order.steps.length - 1)) {
+          // 最后一步
+          await this.validateRule({
+            order,
+            stepType: 'last',
+            stepIndex: index
+          })
+          // 所有步骤
+          await this.validateRule({
+            order,
+            stepType: 'all',
+            stepIndex: index
+          })
+        } else {
+          // 其他步骤
+          await this.validateRule({
+            order,
+            stepType: 'other',
+            stepIndex: index
+          })
+          // 所有步骤
+          await this.validateRule({
+            order,
+            stepType: 'all',
+            stepIndex: index
+          })
+        }
+      })
+      await Promise.all(promises)
+    },
+    addCheckResult ({ order, stepNum = '', step = '', errorMsg }) {
       db.checkResult.add({
-        num: operatingOrder.num,
-        taskName: operatingOrder.taskName,
-        workplace: operatingOrder.workplace,
-        stepNum: '',
-        step: '',
+        num: order.num,
+        taskName: order.taskName,
+        workplace: order.workplace,
+        stepNum: stepNum,
+        step: step,
         errorMsg: errorMsg
       }).catch(error => {
         console.log('Error: ' + (error.stack || error))
       })
     },
-    checkTaskName (operatingOrder) {
+    async checkTaskName (order) {
       const keywords = this.nameRule.keywords
       for (let i = 0, len = keywords.length; i < len; i++) {
-        if (operatingOrder.taskName.includes(keywords[i].keyword)) {
-          this.addCheckResult(operatingOrder, `通用逻辑：${keywords[i].errorMsg}`)
+        if (order.taskName.includes(keywords[i].keyword)) {
+          await this.addCheckResult({
+            order,
+            errorMsg: `通用逻辑：${keywords[i].errorMsg}`
+          })
         }
       }
     },
-    checkTime (operatingOrder) {
+    async checkTime (operatingOrder) {
       const timeLength = (new Date(operatingOrder.endTime) - new Date(operatingOrder.startTime)) / 60000
       if (timeLength <= this.timeRule.timeLength) {
-        db.checkResult.add({
+        await db.checkResult.add({
           num: operatingOrder.num,
           taskName: operatingOrder.taskName,
           workplace: operatingOrder.workplace,
@@ -205,41 +324,8 @@ export default {
           }
         }
 
-        // if (!task) {
-        //   // 不存在这个任务，添加
-        //   db.operatingOrder.add({
-        //     id: id,
-        //     num: step[0],
-        //     taskName: step[1],
-        //     workplace: step[2],
-        //     steps: [step[4]],
-        //     startTime: step[5],
-        //     endTime: step[6],
-        //     unit: step[7],
-        //     date: step[8],
-        //     status: step[9],
-        //     department: step[10],
-        //   }).catch(error => {
-        //     console.log('Error: ' + (error.stack || error))
-        //   })
-        // } else {
-        //   // 存在这个任务，更新步骤字段
-        //   if (step[3].includes('.')) {
-        //     // 子步骤
-        //     stepIndex = Number(step[3].split('.')[0]) - 1
-        //     if (Array.isArray(task.steps[stepIndex])) {
-        //       task.steps[stepIndex].push(step[4])
-        //     } else {
-        //       task.steps[stepIndex] = [task.steps[stepIndex], step[4]]
-        //     }
-        //   } else {
-        //     // 非子步骤
-        //     task.steps.push(step[4])
-        //   }
-        //   db.operatingOrder.update(id, {
-        //     steps: task.steps
-        //   })
-        // }
+        // 清空上次校核结果
+        db.checkResult.clear()
       }
       this.isUploading = false
       this.$message.success('操作票导入成功')

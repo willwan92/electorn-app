@@ -12,6 +12,29 @@ const workplaceList = [
   '35kV大八站'
 ]
 
+const stepOptions = [
+  {
+    label: '所有步骤',
+    value: 'all',
+  },
+  {
+    label: '任务的第一步',
+    value: 'first',
+  },
+  {
+    label: '任务的最后一步',
+    value: 'last',
+  },
+  {
+    label: '母步骤',
+    value: 'sub-first',
+  },
+  {
+    label: '其他步骤（除了母步骤和最后一步）',
+    value: 'other'
+  }
+]
+
 const operatorOptions = [
   {
     label: '需包含',
@@ -27,15 +50,16 @@ const operatorOptions = [
   },
   {
     label: '要以关键字开头',
-    value: 'start'
+    value: 'startsWith'
   },
   {
     label: '要以关键字结尾',
-    value: 'end'
+    value: 'endsWith'
   }
 ]
 
 export {
   workplaceList,
+  stepOptions,
   operatorOptions
 }
