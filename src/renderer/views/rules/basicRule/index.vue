@@ -2,7 +2,7 @@
   <div>
     <el-row>
       <el-col :span="16">
-        <el-form :inline="true" size="small">
+        <el-form :inline="true">
           <el-form-item>
             <el-input class="inline" v-model="name" placeholder="请输入规则名称"></el-input>
           </el-form-item>
@@ -29,7 +29,15 @@
       </el-table-column>
       <el-table-column label="校验逻辑" prop="operator">
       </el-table-column>
-      <el-table-column label="校验关键字" prop="keyword">
+      <el-table-column label="校验关键字">
+        <template slot-scope="scope">
+          <div>
+            <span v-for="(item, index) in scope.row.keywords" :key="item">
+              <el-divider v-if="index > 0"  direction="vertical"></el-divider>
+              {{ item }}
+            </span>
+          </div>
+        </template>
       </el-table-column>
       <el-table-column label="错误信息" prop="errorMsg">
       </el-table-column>
@@ -72,7 +80,7 @@
 <script>
 import db from '@/database/index'
 import EditDialog from './components/EditDialog'
-import { operatorOptions } from '@/utils/constant'
+import { operatorOptions, stepOptions } from '@/utils/constant'
 
 export default {
   components: {
@@ -127,28 +135,6 @@ export default {
       this.fetchTableData()
     },
     async fetchTableData () {
-      const stepOptions = [
-        {
-          label: '所有步骤',
-          value: 'all',
-        },
-        {
-          label: '任务的第一步',
-          value: 'first',
-        },
-        {
-          label: '任务的最后一步',
-          value: 'last',
-        },
-        {
-          label: '子任务的第一步',
-          value: 'sub-0',
-        },
-        {
-          label: '其他步骤',
-          value: 'other'
-        }
-      ]
       this.isLoading = true
       // 获取总条数
       db.simpleRule

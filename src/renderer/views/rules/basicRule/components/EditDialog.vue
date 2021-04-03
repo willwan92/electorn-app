@@ -25,7 +25,11 @@
         </el-select>
       </el-form-item>
       <el-form-item label="校验关键字">
-        <el-input v-model="form.keyword"></el-input>
+        <div v-for="(item, index) in form.keywords" :key="index">
+          <el-input v-model="form.keywords[index]" placeholder="请输入关键字，关键字之间是或的关系"></el-input>
+          <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
+          <el-button class="btn-del" v-else icon="el-icon-minus" @click="handleRemoveClick(index)" type="danger" circle></el-button>
+        </div>
       </el-form-item>
       <el-form-item label="报错信息">
         <el-input v-model="form.errorMsg"></el-input>
@@ -39,7 +43,7 @@
 </template>
 
 <script>
-import { operatorOptions } from '@/utils/constant'
+import { operatorOptions, stepOptions } from '@/utils/constant'
 import db from '@/database/index'
 export default {
   name: 'EditDialog',
@@ -48,33 +52,12 @@ export default {
       formLabelWidth: '120px',
       dialogFormVisible: false,
       operatorOptions: Object.freeze(operatorOptions),
-      stepOptions: [
-        {
-          label: '所有步骤',
-          value: 'all',
-        },
-        {
-          label: '任务的第一步',
-          value: 'first',
-        },
-        {
-          label: '任务的最后一步',
-          value: 'last',
-        },
-        {
-          label: '子任务的第一步',
-          value: 'sub-0',
-        },
-        {
-          label: '其他步骤',
-          value: 'other'
-        }
-      ],
+      stepOptions: Object.freeze(stepOptions),
       form: {
         name: '',
         step: '',
         operator: '',
-        keyword: '',
+        keywords: [''],
         errorMsg: ''
       }
     }
@@ -87,12 +70,18 @@ export default {
           name: '',
           step: '',
           operator: '',
-          keyword: '',
+          keywords: [''],
           errorMsg: ''
         }
       } else {
         this.form = await db.simpleRule.get(row.id)
       }
+    },
+    handleAddClick () {
+      this.form.keywords.push('')
+    },
+    handleRemoveClick (index) {
+      this.form.keywords.splice(index, 1)
     },
     handleSubmit () {
       if (!this.form.id) {
@@ -131,6 +120,9 @@ export default {
   width: 400px;
   .el-input, .el-select {
     width: 300px;
+  }
+  .btn-del {
+    margin-top: 10px;
   }
 }
 </style>
