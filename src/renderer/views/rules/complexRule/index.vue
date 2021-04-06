@@ -12,8 +12,10 @@
         </el-form>
       </el-col>
       <el-col :span="8" style="text-align: right">
-        <el-button @click="handleExportClick">
-          导出
+        <el-button
+          :loading="isExporting"
+          @click="handleExportClick">
+          {{ isExporting ? '正在导出' : '导出' }}
         </el-button>
         <el-button
           type="primary"
@@ -81,6 +83,8 @@
 
 <script>
 import db from '@/database/index'
+import fs from 'fs'
+import { remote } from 'electron'
 import { operatorOptions, positionOptions, condOperatorOptions, condPosOptions } from '@/utils/constant'
 
 export default {
@@ -91,6 +95,7 @@ export default {
       currentPage: 1,
       pagesize: 10,
       total: 0,
+      isExporting: false,
       isLoading: false
     }
   },
@@ -99,13 +104,17 @@ export default {
   },
   methods: {
     async handleExportClick () {
+      this.isExporting = true
       let rules = await db.complexRule.toArray()
-      console.log(rules)
-      // const ws = XLSX.utils.aoa_to_sheet(rules)
-      // const wb = XLSX.utils.book_new()
-      // XLSX.utils.book_append_sheet(wb, ws, 'SheetJS')
-      // /* generate file and send to client */
-      // XLSX.writeFile(wb, 'D://sheetjs_json.xlsx')
+      let data = JSON.stringify(rules, null, 2)
+      const desktop = remote.app.getPath('desktop')
+      const timestamp = this.$moment().format('yyyyMMDDHHmmss')
+      console.log(`${desktop}/复杂规则库-${timestamp}.json`)
+      fs.writeFile(`${desktop}/复杂规则库-${timestamp}.json`, data, (err) => {
+        if (err) throw err
+        this.isExporting = false
+        this.$message.success('规则库已经保存到桌面！')
+      })
     },
     handleEditClick (row) {
       const query = row ? { id: row.id } : null
