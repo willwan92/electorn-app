@@ -12,9 +12,11 @@
         </el-form>
       </el-col>
       <el-col :span="8" style="text-align: right">
+        <el-button @click="handleExportClick">
+          导出
+        </el-button>
         <el-button
           type="primary"
-          size="small"
           @click="handleEditClick"
           icon="el-icon-plus">
           新建
@@ -96,6 +98,15 @@ export default {
     this.handleQuery()
   },
   methods: {
+    async handleExportClick () {
+      let rules = await db.complexRule.toArray()
+      console.log(rules)
+      // const ws = XLSX.utils.aoa_to_sheet(rules)
+      // const wb = XLSX.utils.book_new()
+      // XLSX.utils.book_append_sheet(wb, ws, 'SheetJS')
+      // /* generate file and send to client */
+      // XLSX.writeFile(wb, 'D://sheetjs_json.xlsx')
+    },
     handleEditClick (row) {
       const query = row ? { id: row.id } : null
       this.$router.push({
