@@ -12,6 +12,18 @@ const workplaceList = [
   '35kV大八站'
 ]
 
+const positionOptions = {
+  current: '目标步骤（满足条件的）',
+  before: '在目标步骤之前',
+  after: '在目标步骤之后'
+}
+
+const condPosOptions = {
+  current: '且在此步骤中',
+  before: '且在此步骤之前',
+  after: '且在此步骤之后'
+}
+
 const stepOptions = [
   {
     label: '所有步骤',
@@ -35,30 +47,46 @@ const stepOptions = [
   }
 ]
 
+const condOperatorOptions = {
+  in: '包含',
+  notIn: '不包含',
+  equal: '等于',
+  startsWith: '以关键字开头',
+  endsWith: '以关键字结尾'
+}
+
 const operatorOptions = [
   {
     label: '需包含',
+    filterLabel: '包含',
     value: 'in'
   },
   {
     label: '不可包含',
+    filterLabel: '不包含',
     value: 'notIn'
   },
   {
     label: '要等于',
+    filterLabel: '等于',
     value: 'equal'
   },
   {
     label: '要以关键字开头',
+    filterLabel: '以关键字开头',
     value: 'startsWith'
   },
   {
     label: '要以关键字结尾',
+    filterLabel: '以关键字结尾',
     value: 'endsWith'
   }
 ]
 
 export {
+  condOperatorOptions,
+  positionOptions,
+  condPosOptions,
   workplaceList,
   stepOptions,
   operatorOptions

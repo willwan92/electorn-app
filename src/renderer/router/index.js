@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Layout from '../views/layout/Layout'
+import Layout from '@/views/layout/Layout'
 
 // in development-env not use lazy-loading, because lazy-loading too many pages will cause webpack hot update too slow. so only in production use lazy-loading;
 // detail: https://panjiachen.github.io/vue-element-admin-site/#/lazy-loading
@@ -73,6 +73,13 @@ export const constantRouterMap = [
         name: 'complexRule',
         component: () => import('@/views/rules/complexRule/index'),
         meta: { title: '步骤复杂规则', icon: 'form' }
+      },
+      {
+        path: 'complexRuleEdit',
+        name: 'complexRuleEdit',
+        hidden: true,
+        meta: { title: '步骤复杂规则-编辑' },
+        component: () => import('@/views/rules/complexRule/complexRuleEdit'),
       }
     ]
   },

@@ -2,7 +2,7 @@
   <el-card header="操作任务名称规则">
     <el-form class="page-form" :model="form" label-width="100px" size="small">
       <el-form-item label="规则说明：">
-        操作任务名称不可包含设置的关键字
+        操作任务名称不可包含设置的关键字，否则报出设置的错误信息
       </el-form-item>
       <el-form-item label="校验逻辑：">
         <el-select v-model="form.operator">
@@ -16,7 +16,7 @@
           </el-col>
           <el-col class="line" :span="2">：</el-col>
           <el-col :span="10">
-            <el-input v-model="form.keywords[index].errorMsg" placeholder="请输入错误信息"></el-input>
+            <el-input v-model="form.keywords[index].errorMsg" placeholder="请输入报错信息"></el-input>
           </el-col>
           <el-col  class="button" :span="2">
             <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
