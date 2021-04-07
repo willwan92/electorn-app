@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row>
-      <el-col :span="16">
+      <el-col :span="12">
         <el-form :inline="true">
           <el-form-item>
             <el-input class="inline" v-model="name" placeholder="请输入规则名称"></el-input>
@@ -11,10 +11,21 @@
           </el-form-item>
         </el-form>
       </el-col>
-      <el-col :span="8" style="text-align: right">
+      <el-col :span="12" style="text-align: right">
+        <el-upload
+          class="upload"
+          action=""
+          :show-file-list="false"
+          :before-upload="handleImportClick">
+          <el-button :loading="isImporting" icon="el-icon-upload2">
+            {{ isImporting ? '正在导入' : '导入' }}
+          </el-button>
+        </el-upload>
         <el-button
           :loading="isExporting"
-          @click="handleExportClick">
+          @click="handleExportClick"
+          icon="el-icon-download"
+        >
           {{ isExporting ? '正在导出' : '导出' }}
         </el-button>
         <el-button
@@ -95,6 +106,7 @@ export default {
       currentPage: 1,
       pagesize: 10,
       total: 0,
+      isImporting: false,
       isExporting: false,
       isLoading: false
     }
@@ -103,6 +115,24 @@ export default {
     this.handleQuery()
   },
   methods: {
+    async handleImportClick (file) {
+      const rawdata = fs.readFileSync(file.path)
+      const rules = JSON.parse(rawdata)
+      if (Array.isArray(rules)) {
+        const promises = rules.map(async rule => {
+          delete rule.id
+          await db.complexRule
+            .add(rule)
+            .catch(err => {
+              this.$message.error(`錯誤：${err.message || err}`)
+            })
+        })
+        await Promise.all(promises)
+        this.handleQuery()
+      }
+      // 返回false，自行处理
+      return false
+    },
     async handleExportClick () {
       this.isExporting = true
       let rules = await db.complexRule.toArray()
