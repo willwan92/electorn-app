@@ -118,6 +118,7 @@ export default {
       this.timeRule = await db.timeRule.get('gt')
       this.nameRule = await db.nameRule.get('notIn')
       const operatingOrder = await db.operatingOrder.toArray()
+      // 遍历所有操作票
       const promises = operatingOrder.map(async order => {
         await this.checkTime(order)
         await this.checkTaskName(order)
@@ -127,6 +128,105 @@ export default {
       this.handleQuery()
       this.isUploading = false
     },
+    /**
+     * 校验步骤中是否符合关键字条件，符合一个关键字条件，即为符合
+     * @param step { String } 步骤内容
+     * @param operator { String } 校验逻辑
+     * @param keywords { String[] } 要校验的关键字
+     */
+    validateStep (step, operator, keywords) {
+      if (!step) return false
+      let isMatch = false
+      for (let i = 0, len = keywords.length; i < len; i++) {
+        isMatch = strUtils[operator](step, keywords[i])
+        if (isMatch) {
+          // 如果有符合一个关键字，跳出该循环
+          break
+        }
+      }
+      return isMatch
+    },
+    /**
+     * 校验步骤是否符合指定条件
+     */
+    validateCondition (condition, order, stepIndex, subIndex) {
+      let isMatched = true
+      if (condition.position === 'current' || index === 0) {
+        // 检查当前步骤的
+        isMatched = this.validateStep(step, condition.operator, condition.keywords)
+      } else if (condition.position === 'before') {
+        // 检查当前步骤之前步骤的
+        let len = Number(condition.positionNum)
+        if (len === 0) {
+          // 之后所有步骤
+          if (condition.stepType === 'notChild') {
+            len = stepIndex
+          } else if (condition.stepType === 'child' && subIndex) {
+            len = subIndex
+          }
+        }
+        let targetStep
+        let flag = false
+        for (let i = len - 1; i > 0; i--) {
+          if (condition.stepType === 'notChild') {
+            targetStep = order.steps[i]
+          } else if (condition.stepType === 'child' && subIndex) {
+            targetStep = order.steps[stepIndex][i]
+          }
+          flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+          // 如果步骤中一个合法，终止循环
+          if (flag) break
+        }
+      } else if (position === 'after') {
+        // 检查当前步骤之后步骤的
+        let len = Number(condition.positionNum)
+        if (len === 0) {
+          // 之后所有步骤
+          if (condition.stepType === 'notChild') {
+            len = order.steps.length - stepIndex - 1
+          } else if (condition.stepType === 'child' && subIndex) {
+            len = order.steps[stepIndex].length - subIndex - 1
+          }
+        }
+        let targetStep
+        let flag = false
+        for (let i = 1; i <= len; i++) {
+          if (condition.stepType === 'notChild') {
+            targetStep = order.steps[stepIndex + i]
+          } else if (condition.stepType === 'child' && subIndex) {
+            targetStep = order.steps[stepIndex][subIndex + i]
+          }
+          flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+          // 如果步骤中一个合法，终止循环
+          if (flag) break
+        }
+      }
+    },
+    /**
+     * 校验步骤复杂规则
+     */
+    async validateComplexRule ({ order, step, stepIndex, subIndex}) {
+      let isMatched = true
+      let condition
+      const rules = await db.complexRule.toArray()
+      // 遍历所有规则
+      rules.forEach(rule => {
+        // 遍历规则中所有条件
+        for (let cIndex, len = rule.conditions.length; cIndex < len; cIndex++) {
+          condition = rule.conditions[cIndex]
+          isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
+          // 不满足条件，跳出循环
+          if (!isMatched) break
+        }
+        if (isMatched) {
+          // 满足所有条件，执行校验规则
+          this.validateCondition(rule, order, stepIndex, subIndex)
+        }
+      })
+    },
+    /**
+     * 校验步骤简单规则
+     */
     async validateRule ({ order, stepType, stepIndex, subIndex }) {
       let valid = false
       let keywords
@@ -172,6 +272,7 @@ export default {
             stepType: 'all',
             stepIndex: index
           })
+          this.validateComplexRule()
         } else if (Array.isArray(step)) {
           // 包含子步骤的步骤
           step.forEach(async (item, subIndex) => {
@@ -207,6 +308,7 @@ export default {
               stepIndex: index,
               subIndex: subIndex
             })
+            this.validateComplexRule()
           })
         } else if (index === (order.steps.length - 1)) {
           // 最后一步
@@ -221,6 +323,7 @@ export default {
             stepType: 'all',
             stepIndex: index
           })
+          this.validateComplexRule()
         } else {
           // 其他步骤
           await this.validateRule({
@@ -234,6 +337,7 @@ export default {
             stepType: 'all',
             stepIndex: index
           })
+          this.validateComplexRule()
         }
       })
       await Promise.all(promises)
