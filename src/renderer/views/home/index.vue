@@ -151,56 +151,87 @@ export default {
      */
     validateCondition (condition, order, stepIndex, subIndex) {
       let isMatched = true
+      let targetStep
+      let flag = false
       if (condition.position === 'current' || index === 0) {
         // 检查当前步骤的
+        let step = subIndex === undefined ? order.steps[stepIndex] : order.steps[stepIndex][subIndex]
         isMatched = this.validateStep(step, condition.operator, condition.keywords)
       } else if (condition.position === 'before') {
         // 检查当前步骤之前步骤的
         let len = Number(condition.positionNum)
-        if (len === 0) {
-          // 之后所有步骤
+        if (len > 0) {
+          // 之后的指定几步
           if (condition.stepType === 'notChild') {
-            len = stepIndex
+            for (let i = stepIndex - 1, min = stepIndex - len; i >= min; i--) {
+              targetStep = order.steps[i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
           } else if (condition.stepType === 'child' && subIndex) {
-            len = subIndex
+            for (let i = subIndex - 1, min = subIndex - len; i >= min; i--) {
+              targetStep = order.steps[stepIndex][i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
           }
-        }
-        let targetStep
-        let flag = false
-        for (let i = len - 1; i > 0; i--) {
+        } else if (len === 0) {
+          // 之前所有步骤
           if (condition.stepType === 'notChild') {
-            targetStep = order.steps[i]
+            for (let i = stepIndex - 1; i >= 0; i--) {
+              targetStep = order.steps[i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
           } else if (condition.stepType === 'child' && subIndex) {
-            targetStep = order.steps[stepIndex][i]
+            for (let i = subIndex - 1; i >= 0; i--) {
+              targetStep = order.steps[stepIndex][i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
           }
-          flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-          // 如果步骤中一个合法，终止循环
-          if (flag) break
         }
       } else if (position === 'after') {
-        // 检查当前步骤之后步骤的
-        let len = Number(condition.positionNum)
-        if (len === 0) {
+        if (len > 0) {
+          // 之后的指定几步
+          if (condition.stepType === 'notChild') {
+            for (let i = stepIndex + 1, max = stepIndex + len + 1; i < len; i++) {
+              targetStep = order.steps[i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
+          } else if (condition.stepType === 'child' && subIndex) {
+            for (let i = subIndex + 1, max = subIndex + len + 1; i < len; i++) {
+              targetStep = order.steps[stepIndex][i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
+          }
+        }
+      } else if (len === 0) {
           // 之后所有步骤
           if (condition.stepType === 'notChild') {
-            len = order.steps.length - stepIndex - 1
+            for (let i = stepIndex + 1, max = order.steps.length; i < len; i++) {
+              targetStep = order.steps[i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
           } else if (condition.stepType === 'child' && subIndex) {
-            len = order.steps[stepIndex].length - subIndex - 1
+            for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < len; i++) {
+              targetStep = order.steps[stepIndex][i]
+              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中一个合法，终止循环
+              if (flag) break
+            }
           }
         }
-        let targetStep
-        let flag = false
-        for (let i = 1; i <= len; i++) {
-          if (condition.stepType === 'notChild') {
-            targetStep = order.steps[stepIndex + i]
-          } else if (condition.stepType === 'child' && subIndex) {
-            targetStep = order.steps[stepIndex][subIndex + i]
-          }
-          flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-          // 如果步骤中一个合法，终止循环
-          if (flag) break
-        }
-      }
     },
     /**
      * 校验步骤复杂规则
