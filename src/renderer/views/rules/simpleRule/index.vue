@@ -12,6 +12,22 @@
         </el-form>
       </el-col>
       <el-col :span="8" style="text-align: right">
+        <el-upload
+          class="upload"
+          action=""
+          :show-file-list="false"
+          :before-upload="handleImportClick">
+          <el-button :loading="isImporting" icon="el-icon-upload2">
+            {{ isImporting ? '正在导入' : '导入' }}
+          </el-button>
+        </el-upload>
+        <el-button
+          :loading="isExporting"
+          @click="handleExportClick"
+          icon="el-icon-download"
+        >
+          {{ isExporting ? '正在导出' : '导出' }}
+        </el-button>
         <el-button
           type="primary"
           size="small"
@@ -79,6 +95,8 @@
 
 <script>
 import db from '@/database/index'
+import fs from 'fs'
+import { remote } from 'electron'
 import EditDialog from './components/EditDialog'
 import { operatorOptions, stepOptions } from '@/utils/constant'
 
@@ -93,6 +111,8 @@ export default {
       currentPage: 1,
       pagesize: 10,
       total: 0,
+      isImporting: false,
+      isExporting: false,
       isLoading: false
     }
   },
@@ -100,6 +120,37 @@ export default {
     this.handleQuery()
   },
   methods: {
+    async handleImportClick (file) {
+      await db.simpleRule.clear()
+      const rawdata = fs.readFileSync(file.path)
+      const rules = JSON.parse(rawdata)
+      if (Array.isArray(rules)) {
+        const promises = rules.map(async rule => {
+          delete rule.id
+          await db.simpleRule
+            .add(rule)
+            .catch(err => {
+              this.$message.error(`錯誤：${err.message || err}`)
+            })
+        })
+        await Promise.all(promises)
+        this.handleQuery()
+      }
+      // 返回false，自行处理
+      return false
+    },
+    async handleExportClick () {
+      this.isExporting = true
+      let rules = await db.simpleRule.toArray()
+      let data = JSON.stringify(rules, null, 2)
+      const desktop = remote.app.getPath('desktop')
+      const timestamp = this.$moment().format('yyyyMMDDHHmmss')
+      fs.writeFile(`${desktop}/简单规则库-${timestamp}.json`, data, (err) => {
+        if (err) throw err
+        this.isExporting = false
+        this.$message.success('规则库已经保存到桌面！')
+      })
+    },
     deleteRow (row) {
       this.$confirm(`确认要删除规则 ${row.name} 吗？`, '提示', {
         confirmButtonText: '确定',
