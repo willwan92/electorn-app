@@ -464,7 +464,7 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 100; i < len; i++) {
+      for (let i = 1, len = 1000; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
           continue
