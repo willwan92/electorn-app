@@ -140,7 +140,6 @@ export default {
       let data = JSON.stringify(rules, null, 2)
       const desktop = remote.app.getPath('desktop')
       const timestamp = this.$moment().format('yyyyMMDDHHmmss')
-      console.log(`${desktop}/复杂规则库-${timestamp}.json`)
       fs.writeFile(`${desktop}/复杂规则库-${timestamp}.json`, data, (err) => {
         if (err) throw err
         this.isExporting = false
