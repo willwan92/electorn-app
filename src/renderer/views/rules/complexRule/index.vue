@@ -116,6 +116,7 @@ export default {
   },
   methods: {
     async handleImportClick (file) {
+      await db.complexRule.clear()
       const rawdata = fs.readFileSync(file.path)
       const rules = JSON.parse(rawdata)
       if (Array.isArray(rules)) {

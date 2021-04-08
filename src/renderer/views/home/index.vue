@@ -152,10 +152,10 @@ export default {
     validateCondition (condition, order, stepIndex, subIndex) {
       let isMatched = true
       let targetStep
-      let flag = false
-      if (condition.position === 'current' || index === 0) {
+      let step
+      if (condition.position === 'current') {
         // 检查当前步骤的
-        let step = subIndex === undefined ? order.steps[stepIndex] : order.steps[stepIndex][subIndex]
+        step = subIndex === undefined ? order.steps[stepIndex] : order.steps[stepIndex][subIndex]
         isMatched = this.validateStep(step, condition.operator, condition.keywords)
       } else if (condition.position === 'before') {
         // 检查当前步骤之前步骤的
@@ -163,95 +163,125 @@ export default {
         if (len > 0) {
           // 之后的指定几步
           if (condition.stepType === 'notChild') {
+            // 遍历指定的步骤
             for (let i = stepIndex - 1, min = stepIndex - len; i >= min; i--) {
               targetStep = order.steps[i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           } else if (condition.stepType === 'child' && subIndex) {
+            // 遍历指定的步骤
             for (let i = subIndex - 1, min = subIndex - len; i >= min; i--) {
               targetStep = order.steps[stepIndex][i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           }
         } else if (len === 0) {
           // 之前所有步骤
           if (condition.stepType === 'notChild') {
+            // 遍历指定的步骤
             for (let i = stepIndex - 1; i >= 0; i--) {
               targetStep = order.steps[i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           } else if (condition.stepType === 'child' && subIndex) {
+            // 遍历指定的步骤
             for (let i = subIndex - 1; i >= 0; i--) {
               targetStep = order.steps[stepIndex][i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           }
         }
-      } else if (position === 'after') {
+      } else if (condition.position === 'after') {
+        // 检查当前步骤之后步骤的
+        let len = Number(condition.positionNum)
         if (len > 0) {
           // 之后的指定几步
           if (condition.stepType === 'notChild') {
-            for (let i = stepIndex + 1, max = stepIndex + len + 1; i < len; i++) {
+            // 遍历指定的步骤
+            for (let i = stepIndex + 1, max = stepIndex + len + 1; i < max; i++) {
               targetStep = order.steps[i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           } else if (condition.stepType === 'child' && subIndex) {
-            for (let i = subIndex + 1, max = subIndex + len + 1; i < len; i++) {
+            // 遍历指定的步骤
+            for (let i = subIndex + 1, max = subIndex + len + 1; i < max; i++) {
               targetStep = order.steps[stepIndex][i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           }
-        }
-      } else if (len === 0) {
+        } else if (len === 0) {
           // 之后所有步骤
           if (condition.stepType === 'notChild') {
-            for (let i = stepIndex + 1, max = order.steps.length; i < len; i++) {
+            // 遍历指定的步骤
+            for (let i = stepIndex + 1, max = order.steps.length; i < max; i++) {
               targetStep = order.steps[i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           } else if (condition.stepType === 'child' && subIndex) {
-            for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < len; i++) {
+            // 遍历指定的步骤
+            for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < max; i++) {
               targetStep = order.steps[stepIndex][i]
-              flag = this.validateStep(targetStep, condition.operator, condition.keywords)
-              // 如果步骤中一个合法，终止循环
-              if (flag) break
+              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              // 如果步骤中有一个符合条件，终止循环
+              if (isMatched) break
             }
           }
         }
+      }
+      return isMatched
     },
     /**
      * 校验步骤复杂规则
      */
-    async validateComplexRule ({ order, step, stepIndex, subIndex}) {
+    async validateComplexRule ({ order, stepIndex, subIndex = undefined }) {
       let isMatched = true
       let condition
       const rules = await db.complexRule.toArray()
       // 遍历所有规则
       rules.forEach(rule => {
         // 遍历规则中所有条件
-        for (let cIndex, len = rule.conditions.length; cIndex < len; cIndex++) {
+        let stepNum
+        let step
+        for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
           condition = rule.conditions[cIndex]
           isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
           // 不满足条件，跳出循环
           if (!isMatched) break
+          // 记录符合第一个条件的步骤号
+          if (cIndex === 0) {
+            if (subIndex === undefined) {
+              step = order.steps[stepIndex]
+              stepNum = `${stepIndex + 1}`
+            } else {
+              step = order.steps[stepIndex][subIndex]
+              stepNum = `${stepIndex + 1}.${subIndex + 1}`
+            }
+          }
         }
         if (isMatched) {
           // 满足所有条件，执行校验规则
-          this.validateCondition(rule, order, stepIndex, subIndex)
+          if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
+            this.addCheckResult({
+              order,
+              stepNum,
+              step,
+              errorMsg: rule.errorMsg
+            })
+          }
         }
       })
     },
@@ -303,7 +333,10 @@ export default {
             stepType: 'all',
             stepIndex: index
           })
-          this.validateComplexRule()
+          await this.validateComplexRule({
+            order,
+            stepIndex: index
+          })
         } else if (Array.isArray(step)) {
           // 包含子步骤的步骤
           step.forEach(async (item, subIndex) => {
@@ -339,7 +372,11 @@ export default {
               stepIndex: index,
               subIndex: subIndex
             })
-            this.validateComplexRule()
+            await this.validateComplexRule({
+              order,
+              subIndex,
+              stepIndex: index
+            })
           })
         } else if (index === (order.steps.length - 1)) {
           // 最后一步
@@ -354,7 +391,10 @@ export default {
             stepType: 'all',
             stepIndex: index
           })
-          this.validateComplexRule()
+          await this.validateComplexRule({
+            order,
+            stepIndex: index
+          })
         } else {
           // 其他步骤
           await this.validateRule({
@@ -368,7 +408,10 @@ export default {
             stepType: 'all',
             stepIndex: index
           })
-          this.validateComplexRule()
+          await this.validateComplexRule({
+            order,
+            stepIndex: index
+          })
         }
       })
       await Promise.all(promises)
@@ -420,6 +463,7 @@ export default {
       const sheetsData = xlsx.parse(file.path)[0].data
       // 插入数据库
       let id, task, stepIndex, step, newId
+      // 遍历所有操作步骤
       for (let i = 1, len = 100; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
@@ -427,9 +471,12 @@ export default {
         }
         newId = step[0] + step[2]
         if (id !== newId) {
+          // 不属于当前操作任务的步骤，把当前操作任务添加到数据库
           db.operatingOrder.add(task).catch(error => {
             console.log('Error: ' + (error.stack || error))
           })
+
+          // 新的操作任务
           id = newId
           task = {
             id: id,
@@ -445,6 +492,7 @@ export default {
             department: step[10],
           }
         } else {
+          // 属于当前操作任务的步骤
           if (step[3].includes('.')) {
             // 子步骤
             stepIndex = Number(step[3].split('.')[0]) - 1
@@ -464,6 +512,7 @@ export default {
       }
       this.isUploading = false
       this.$message.success('操作票导入成功')
+      this.handleQuery()
       // 返回 false, 自行处理excel数据
       return false
     }
