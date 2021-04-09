@@ -251,7 +251,7 @@ export default {
       let condition
       const rules = await db.complexRule.toArray()
       // 遍历所有规则
-      rules.forEach(rule => {
+      rules.forEach(async rule => {
         // 遍历规则中所有条件
         let stepNum
         let step
@@ -274,7 +274,7 @@ export default {
         if (isMatched) {
           // 满足所有条件，执行校验规则
           if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
-            this.addCheckResult({
+            await this.addCheckResult({
               order,
               stepNum,
               step,
@@ -287,11 +287,9 @@ export default {
     /**
      * 校验步骤简单规则
      */
-    async validateRule ({ order, stepType, stepIndex, subIndex }) {
+    async validateRule ({ order, stepType, step, stepNum }) {
       let valid = false
       let keywords
-      const hasSubIndex = subIndex !== undefined
-      let step = hasSubIndex ? order.steps[stepIndex][subIndex] : order.steps[stepIndex]
       this.simpleRule = await db.simpleRule.toArray()
       this.simpleRule.filter(rule => {
         // 获取与步骤类型相同的规则
@@ -310,8 +308,8 @@ export default {
           // 如果所有关键字都不符合，将该步骤添加到校核结果中
           await this.addCheckResult({
             order,
-            stepNum: hasSubIndex ? `${stepIndex + 1}.${subIndex + 1}` : stepIndex + 1,
-            step: step,
+            stepNum,
+            step,
             errorMsg: rule.errorMsg
           })
         }
@@ -326,7 +324,8 @@ export default {
         stepNum = stepIndex + 1
         await this.validateRule({
           order,
-          stepIndex,
+          step,
+          stepNum,
           stepType: 'all'
         })
         await this.validateComplexRule({
@@ -339,8 +338,8 @@ export default {
         stepNum = `${stepIndex + 1}.${subIndex + 1}`
         await this.validateRule({
           order,
-          subIndex,
-          stepIndex,
+          step,
+          stepNum,
           stepType: 'all'
         })
         await this.validateComplexRule({
@@ -349,7 +348,7 @@ export default {
           subIndex
         })
       }
-      this.checkVerb({
+      await this.checkVerb({
         order,
         step,
         stepNum
@@ -376,7 +375,7 @@ export default {
             if (nounValid) break
           }
           if (!nounValid) {
-            this.addCheckResult({
+            await this.addCheckResult({
               order,
               step,
               stepNum,
@@ -387,7 +386,7 @@ export default {
         }
       }
       if (!verbValid) {
-        this.addCheckResult({
+        await this.addCheckResult({
           order,
           step,
           stepNum,
@@ -396,84 +395,81 @@ export default {
       }
     },
     async checkSteps (order) {
-      const promises = order.steps.map(async (step, index) => {
-        if (index === 0) {
-          // 第一步
-          await this.validateRule({
-            order,
-            stepType: 'first',
-            stepIndex: index
-          })
+      const promises = order.steps.map(async (step, stepIndex) => {
+        if (!Array.isArray(step)) {
+          let stepNum = stepIndex + 1
+          if (stepIndex === 0) {
+            // 第一步
+            await this.validateRule({
+              order,
+              step,
+              stepNum,
+              stepType: 'first'
+            })
+          } else if (stepIndex === (order.steps.length - 1)) {
+            // 最后一步
+            await this.validateRule({
+              order,
+              step,
+              stepNum,
+              stepType: 'last'
+            })
+          } else {
+            // 其他步骤
+            await this.validateRule({
+              order,
+              step,
+              stepNum,
+              stepType: 'other'
+            })
+          }
           // 所有步骤
           await this.validateCommonRule({
             order,
-            stepIndex: index
+            stepIndex
           })
-        } else if (Array.isArray(step)) {
+        } else {
           // 包含子步骤的步骤
-          step.forEach(async (item, subIndex) => {
+          step.forEach(async (subStep, subIndex) => {
+            let stepNum = `${stepIndex + 1}.${subIndex + 1}`
             if (subIndex === 0) {
               // 母步骤
               await this.validateRule({
                 order,
-                stepType: 'sub-first',
-                stepIndex: index,
-                subIndex: subIndex
+                stepNum,
+                step: subStep,
+                stepType: 'sub-first'
               })
-            } else if (index === (order.steps.length - 1) && subIndex === (step.length - 1)) {
+            } else if (stepIndex === (order.steps.length - 1) && subIndex === (step.length - 1)) {
               // 最后一步
               await this.validateRule({
                 order,
-                stepType: 'last',
-                stepIndex: index,
-                subIndex: subIndex
+                stepNum,
+                step: subStep,
+                stepType: 'last'
               })
             } else {
               // 其他步骤
               await this.validateRule({
                 order,
-                stepType: 'other',
-                stepIndex: index,
-                subIndex: subIndex
+                stepNum,
+                step: subStep,
+                stepType: 'other'
               })
             }
             // 所有步骤
             await this.validateCommonRule({
               order,
               subIndex,
-              stepIndex: index
+              stepIndex
             })
-          })
-        } else if (index === (order.steps.length - 1)) {
-          // 最后一步
-          await this.validateRule({
-            order,
-            stepType: 'last',
-            stepIndex: index
-          })
-          // 所有步骤
-          await this.validateCommonRule({
-            order,
-            stepIndex: index
-          })
-        } else {
-          // 其他步骤
-          await this.validateRule({
-            order,
-            stepType: 'other',
-            stepIndex: index
-          })
-          // 所有步骤
-          await this.validateCommonRule({
-            order,
-            stepIndex: index
           })
         }
       })
       await Promise.all(promises)
     },
     addCheckResult ({ order, stepNum = '', step = '', errorMsg }) {
-      db.checkResult.add({
+      return db.checkResult.add({
         num: order.num,
         taskName: order.taskName,
         workplace: order.workplace,
