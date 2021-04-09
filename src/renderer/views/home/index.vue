@@ -268,7 +268,7 @@ export default {
               stepNum = `${stepIndex + 1}`
             } else {
               step = order.steps[stepIndex][subIndex]
-              stepNum = `${stepIndex + 1}.${subIndex + 1}`
+              stepNum = `${stepIndex + 1}.${subIndex}`
             }
           }
         }
