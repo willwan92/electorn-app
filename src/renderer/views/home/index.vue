@@ -318,6 +318,33 @@ export default {
         }
       })
     },
+    async validateCommonRule ({ order, stepIndex, subIndex = undefined }) {
+      if (subIndex === undefined) {
+        // 非子步骤
+        await this.validateRule({
+          order,
+          stepIndex,
+          stepType: 'all'
+        })
+        await this.validateComplexRule({
+          order,
+          stepIndex
+        })
+      } else {
+        // 子步骤
+        await this.validateRule({
+          order,
+          subIndex,
+          stepIndex,
+          stepType: 'all'
+        })
+        await this.validateComplexRule({
+          order,
+          stepIndex,
+          subIndex
+        })
+      }
+    },
     async checkSteps (order) {
       const promises = order.steps.map(async (step, index) => {
         if (index === 0) {
@@ -328,12 +355,7 @@ export default {
             stepIndex: index
           })
           // 所有步骤
-          await this.validateRule({
-            order,
-            stepType: 'all',
-            stepIndex: index
-          })
-          await this.validateComplexRule({
+          await this.validateCommonRule({
             order,
             stepIndex: index
           })
@@ -366,13 +388,7 @@ export default {
               })
             }
             // 所有步骤
-            await this.validateRule({
-              order,
-              stepType: 'all',
-              stepIndex: index,
-              subIndex: subIndex
-            })
-            await this.validateComplexRule({
+            await this.validateCommonRule({
               order,
               subIndex,
               stepIndex: index
@@ -386,12 +402,7 @@ export default {
             stepIndex: index
           })
           // 所有步骤
-          await this.validateRule({
-            order,
-            stepType: 'all',
-            stepIndex: index
-          })
-          await this.validateComplexRule({
+          await this.validateCommonRule({
             order,
             stepIndex: index
           })
@@ -403,12 +414,7 @@ export default {
             stepIndex: index
           })
           // 所有步骤
-          await this.validateRule({
-            order,
-            stepType: 'all',
-            stepIndex: index
-          })
-          await this.validateComplexRule({
+          await this.validateCommonRule({
             order,
             stepIndex: index
           })
