@@ -53,7 +53,6 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
-// import { stepOptions, operatorOptions } from '@/utils/constant'
 import { strUtils } from '@/utils/check'
 
 export default {
@@ -319,8 +318,12 @@ export default {
       })
     },
     async validateCommonRule ({ order, stepIndex, subIndex = undefined }) {
+      let step
+      let stepNum
       if (subIndex === undefined) {
         // 非子步骤
+        step = order.steps[stepIndex]
+        stepNum = stepIndex + 1
         await this.validateRule({
           order,
           stepIndex,
@@ -332,6 +335,8 @@ export default {
         })
       } else {
         // 子步骤
+        step = order.steps[stepIndex][subIndex]
+        stepNum = `${stepIndex + 1}.${subIndex + 1}`
         await this.validateRule({
           order,
           subIndex,
@@ -342,6 +347,51 @@ export default {
           order,
           stepIndex,
           subIndex
+        })
+      }
+      this.checkVerb({
+        order,
+        step,
+        stepNum
+      })
+    },
+    /**
+     * 检查动词搭配
+     */
+    async checkVerb ({ order, step, stepNum }) {
+      const verbs = await db.verb.toArray()
+      const startsWith = strUtils['startsWith']
+      const includes = strUtils['in']
+      let verb
+      let nouns
+      let verbValid = false
+      let nounValid = false
+      for (let i = 0, len = verbs.length; i < len; i++) {
+        verb = verbs[i]
+        verbValid = startsWith(step, verb.verb)
+        if (verbValid) {
+          nouns = verb.nouns
+          for (let i = 0, len = nouns.length; i < len; i++) {
+            nounValid = includes(step, nouns[i])
+            if (nounValid) break
+          }
+          if (!nounValid) {
+            this.addCheckResult({
+              order,
+              step,
+              stepNum,
+              errorMsg: '动词和设备不一致'
+            })
+          }
+          break
+        }
+      }
+      if (!verbValid) {
+        this.addCheckResult({
+          order,
+          step,
+          stepNum,
+          errorMsg: '动词和设备不一致'
         })
       }
     },
