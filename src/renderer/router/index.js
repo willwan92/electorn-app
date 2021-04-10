@@ -84,6 +84,27 @@ export const constantRouterMap = [
     ]
   },
   {
+    path: '/specialRules',
+    component: Layout,
+    name: 'specialRules',
+    redirect: '/specialRules/simpleRule',
+    meta: { title: '专用规则', icon: 'form' },
+    children: [
+      {
+        path: 'simpleRule',
+        name: 'simpleRule',
+        component: () => import('@/views/specialRules/simpleRule/index'),
+        meta: { title: '简单规则', icon: 'form' }
+      },
+      {
+        path: 'complexRule',
+        name: 'complexRule',
+        component: () => import('@/views/specialRules/complexRule/index'),
+        meta: { title: '复杂规则', icon: 'form' }
+      }
+    ]
+  },
+  {
     path: '/deviceLib',
     component: Layout,
     children: [
