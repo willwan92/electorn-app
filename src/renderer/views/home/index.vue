@@ -268,7 +268,7 @@ export default {
               stepNum = `${stepIndex + 1}`
             } else {
               step = order.steps[stepIndex][subIndex]
-              stepNum = `${stepIndex + 1}.${subIndex}`
+              stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
             }
           }
         }
@@ -401,7 +401,7 @@ export default {
       } else {
         // 子步骤
         step = order.steps[stepIndex][subIndex]
-        stepNum = `${stepIndex + 1}.${subIndex + 1}`
+        stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
         await this.validateRule({
           order,
           step,
@@ -497,7 +497,7 @@ export default {
         } else {
           // 包含子步骤的步骤
           step.forEach(async (subStep, subIndex) => {
-            let stepNum = `${stepIndex + 1}.${subIndex + 1}`
+            let stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
             if (subIndex === 0) {
               // 母步骤
               await this.validateRule({
