@@ -31,12 +31,8 @@
       </el-form-item>
       <el-form-item label="校验逻辑">
         <el-select v-model="form.operator" placeholder="请选择校验逻辑">
-          <el-option
-            v-for="item in operatorOptions"
-            :label="item.label"
-            :key="item.value"
-            :value="item.value"
-          ></el-option>
+          <el-option label="需包含" value="in"></el-option>
+          <el-option label="不可包含" value="notIn"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="校验关键字">
