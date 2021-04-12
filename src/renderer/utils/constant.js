@@ -55,6 +55,14 @@ const condOperatorOptions = {
   endsWith: '以关键字结尾'
 }
 
+const checkOperatorOptions = {
+  in: '需包含',
+  notIn: '不可包含',
+  equal: '要等于',
+  startsWith: '要以关键字开头',
+  endsWith: '要以关键字结尾'
+}
+
 const operatorOptions = [
   {
     label: '需包含',
@@ -85,6 +93,7 @@ const operatorOptions = [
 
 export {
   condOperatorOptions,
+  checkOperatorOptions,
   positionOptions,
   condPosOptions,
   workplaceList,

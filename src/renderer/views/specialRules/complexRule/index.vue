@@ -1,5 +1,5 @@
 <template>
-  <div>特殊规则-复杂</div>
+  <div>专用规则-复杂</div>
 </template>
 
 <script>

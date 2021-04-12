@@ -122,6 +122,7 @@ export default {
         await this.checkTime(order)
         await this.checkTaskName(order)
         await this.checkSteps(order)
+        await this.validateSpecialRule(order)
       })
       await Promise.all(promises)
       this.handleQuery()
@@ -267,7 +268,7 @@ export default {
               stepNum = `${stepIndex + 1}`
             } else {
               step = order.steps[stepIndex][subIndex]
-              stepNum = `${stepIndex + 1}.${subIndex}`
+              stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
             }
           }
         }
@@ -315,6 +316,71 @@ export default {
         }
       })
     },
+    async validateSpecialRule (order) {
+      const rules = await db.specialSimpleRule.toArray()
+      // 遍历规则
+      rules.forEach(rule => {
+        const taskKeywords = rule.taskCondition.keywords
+        const isMatched = this.validateStep(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
+        if (isMatched && isMatchedWorkplace) {
+          // 任务符合规则的任务条件和工作站点
+          const operator = rule.operator
+          const keywords = rule.keywords
+          const steps = order.steps
+          const isIn = operator === 'in'
+          let step
+          let stepNum = ''
+          let stepTmp = ''
+          let valid = false
+          // 遍历操作票所有步骤
+          for (let idx = 0, len = steps.length; idx < len; idx++) {
+            step = steps[idx]
+            stepTmp = step
+            if (!Array.isArray(step)) {
+              // 非子步骤
+              valid = this.validateStep(step, operator, keywords)
+              if (isIn) {
+                // 如果需要包含，有一个步骤包含关键字则跳出循环（符合规则）
+                if (valid) break
+              } else {
+                // 如果是不可包含，有一个步骤包含关键字则跳出循环（违反规则）
+                if (!valid) {
+                  stepNum = `${idx + 1}`
+                  break
+                }
+              }
+            } else {
+              let subStep
+              for (let subIdx = 0, len = step.length; subIdx < len; subIdx++) {
+                // 子步骤
+                subStep = step[subIdx]
+                stepTmp = subStep
+                valid = this.validateStep(subStep, operator, keywords)
+                if (isIn) {
+                  // 如果需要包含，有一个步骤包含关键字则跳出循环（符合规则）
+                  if (valid) break
+                } else {
+                  // 如果是不可包含，有一个步骤包含关键字则跳出循环（违反规则）
+                  if (!valid) {
+                    stepNum = subIdx > 0 ? `${idx + 1}.${subIdx}` : `${idx + 1}`
+                    break
+                  }
+                }
+              }
+            }
+          }
+          if (!valid) {
+            this.addCheckResult({
+              order,
+              stepNum,
+              step: stepNum ? stepTmp : '',
+              errorMsg: rule.errorMsg
+            })
+          }
+        }
+      })
+    },
     async validateCommonRule ({ order, stepIndex, subIndex = undefined }) {
       let step
       let stepNum
@@ -335,7 +401,7 @@ export default {
       } else {
         // 子步骤
         step = order.steps[stepIndex][subIndex]
-        stepNum = `${stepIndex + 1}.${subIndex + 1}`
+        stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
         await this.validateRule({
           order,
           step,
@@ -431,7 +497,7 @@ export default {
         } else {
           // 包含子步骤的步骤
           step.forEach(async (subStep, subIndex) => {
-            let stepNum = `${stepIndex + 1}.${subIndex + 1}`
+            let stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
             if (subIndex === 0) {
               // 母步骤
               await this.validateRule({
@@ -516,7 +582,7 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 1000; i < len; i++) {
+      for (let i = 1, len = 3000; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
           continue
