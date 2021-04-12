@@ -76,7 +76,6 @@ export const constantRouterMap = [
       },
       {
         path: 'complexRuleEdit',
-        name: 'complexRuleEdit',
         hidden: true,
         meta: { title: '步骤复杂规则-编辑' },
         component: () => import('@/views/rules/complexRule/complexRuleEdit'),
@@ -101,6 +100,12 @@ export const constantRouterMap = [
         name: 'complexRule',
         component: () => import('@/views/specialRules/complexRule/index'),
         meta: { title: '复杂规则', icon: 'form' }
+      },
+      {
+        path: 'complexRuleEdit',
+        hidden: true,
+        meta: { title: '专用复杂规则-编辑' },
+        component: () => import('@/views/specialRules/complexRule/complexRuleEdit'),
       }
     ]
   },
