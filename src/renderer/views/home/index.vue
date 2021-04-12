@@ -123,7 +123,7 @@ export default {
         await this.checkTaskName(order)
         await this.checkSteps(order)
         await this.validateSpecialRule(order)
-        // await this.validateSpecialComplexRule(order)
+        await this.validateSpecialComplexRule(order)
       })
       await Promise.all(promises)
       this.handleQuery()
@@ -248,7 +248,7 @@ export default {
     /**
      * 校验复杂规则
      */
-    validateComplexRule ({ order, rule, stepIndex, subIndex }) {
+    async validateComplexRule ({ order, rule, stepIndex, subIndex }) {
       // 遍历规则中所有条件
       let stepNum
       let step
@@ -288,9 +288,10 @@ export default {
     async traverseComplexRule ({ order, stepIndex, subIndex = undefined }) {
       const rules = await db.complexRule.toArray()
       // 遍历所有规则
-      rules.forEach(async rule => {
-        this.validateComplexRule({ order, rule, stepIndex, subIndex })
+      const promises = rules.map(async rule => {
+        await this.validateComplexRule({ order, rule, stepIndex, subIndex })
       })
+      await Promise.all(promises)
     },
     /**
      * 校验步骤简单规则
@@ -617,7 +618,7 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 3000; i < len; i++) {
+      for (let i = 1, len = 10000; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
           continue
