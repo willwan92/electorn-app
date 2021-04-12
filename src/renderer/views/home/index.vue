@@ -123,6 +123,7 @@ export default {
         await this.checkTaskName(order)
         await this.checkSteps(order)
         await this.validateSpecialRule(order)
+        // await this.validateSpecialComplexRule(order)
       })
       await Promise.all(promises)
       this.handleQuery()
@@ -245,44 +246,50 @@ export default {
       return isMatched
     },
     /**
-     * 校验步骤复杂规则
+     * 校验复杂规则
      */
-    async validateComplexRule ({ order, stepIndex, subIndex = undefined }) {
+    validateComplexRule ({ order, rule, stepIndex, subIndex }) {
+      // 遍历规则中所有条件
+      let stepNum
+      let step
       let isMatched = true
       let condition
+      for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
+        condition = rule.conditions[cIndex]
+        isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
+        // 不满足条件，跳出循环
+        if (!isMatched) break
+        // 记录符合第一个条件的步骤号
+        if (cIndex === 0) {
+          if (subIndex === undefined) {
+            step = order.steps[stepIndex]
+            stepNum = `${stepIndex + 1}`
+          } else {
+            step = order.steps[stepIndex][subIndex]
+            stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
+          }
+        }
+      }
+      if (isMatched) {
+        // 满足所有条件，执行校验规则
+        if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
+          await this.addCheckResult({
+            order,
+            stepNum,
+            step,
+            errorMsg: rule.errorMsg
+          })
+        }
+      }
+    },
+    /**
+     * 遍历步骤复杂规则
+     */
+    async traverseComplexRule ({ order, stepIndex, subIndex = undefined }) {
       const rules = await db.complexRule.toArray()
       // 遍历所有规则
       rules.forEach(async rule => {
-        // 遍历规则中所有条件
-        let stepNum
-        let step
-        for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
-          condition = rule.conditions[cIndex]
-          isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
-          // 不满足条件，跳出循环
-          if (!isMatched) break
-          // 记录符合第一个条件的步骤号
-          if (cIndex === 0) {
-            if (subIndex === undefined) {
-              step = order.steps[stepIndex]
-              stepNum = `${stepIndex + 1}`
-            } else {
-              step = order.steps[stepIndex][subIndex]
-              stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
-            }
-          }
-        }
-        if (isMatched) {
-          // 满足所有条件，执行校验规则
-          if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
-            await this.addCheckResult({
-              order,
-              stepNum,
-              step,
-              errorMsg: rule.errorMsg
-            })
-          }
-        }
+        this.validateComplexRule({ order, rule, stepIndex, subIndex })
       })
     },
     /**
@@ -316,6 +323,34 @@ export default {
         }
       })
     },
+    /**
+     * 校验专用复杂规则
+     */
+    async validateSpecialComplexRule (order) {
+      const rules = await db.specialComplexRule.toArray()
+      // 遍历专用复杂规则
+      rules.forEach(rule => {
+        const taskKeywords = rule.taskCondition.keywords
+        const isMatched = this.validateStep(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
+        if (isMatched && isMatchedWorkplace) {
+          // 任务符合规则的任务条件和工作站点
+          // 遍历操作票中的步骤
+          order.steps.forEach((step, stepIndex) => {
+            if (!Array.isArray(step)) {
+              this.validateComplexRule({ order, rule, stepIndex })
+            } else {
+              step.forEach((subStep, subIndex) => {
+                this.validateComplexRule({ order, rule, stepIndex, subIndex })
+              })
+            }
+          })
+        }
+      })
+    },
+    /**
+     * 校验专用简单规则
+     */
     async validateSpecialRule (order) {
       const rules = await db.specialSimpleRule.toArray()
       // 遍历规则
@@ -394,7 +429,7 @@ export default {
           stepNum,
           stepType: 'all'
         })
-        await this.validateComplexRule({
+        await this.traverseComplexRule({
           order,
           stepIndex
         })
@@ -408,7 +443,7 @@ export default {
           stepNum,
           stepType: 'all'
         })
-        await this.validateComplexRule({
+        await this.traverseComplexRule({
           order,
           stepIndex,
           subIndex
