@@ -27,7 +27,13 @@ export const strUtils = {
     }
   },
   notIn: function (str, target) {
-    return !this.in(str, target)
+    if (!target.includes('...')) {
+      return !str['includes'](target)
+    } else {
+      const newTarget = escapeSpecialChar(target)
+      const reg = new RegExp(newTarget)
+      return !reg.test(str)
+    }
   },
   equal: function (str, target) {
     return str === target
