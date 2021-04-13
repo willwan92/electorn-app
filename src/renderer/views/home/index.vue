@@ -130,22 +130,27 @@ export default {
       this.isUploading = false
     },
     /**
-     * 校验步骤中是否符合关键字条件，符合一个关键字条件，即为符合
-     * @param step { String } 步骤内容
+     * 校验字符串中是否符合关键字条件
+     * @param step { String } 目标字符串
      * @param operator { String } 校验逻辑
      * @param keywords { String[] } 要校验的关键字
      */
-    validateStep (step, operator, keywords) {
-      if (!step) return false
-      let isMatch = false
+    validateStr (step, operator, keywords) {
+      let valid = false
+      const isNotIn = operator === 'notIn'
+      const validate = strUtils[operator]
+      // 遍历关键字
       for (let i = 0, len = keywords.length; i < len; i++) {
-        isMatch = strUtils[operator](step, keywords[i])
-        if (isMatch) {
-          // 如果有符合一个关键字，跳出该循环
-          break
+        valid = validate(step, keywords[i])
+        if (isNotIn) {
+          // 如果校验逻辑是不包含，不符合一个关键字则跳出循环（违反规则）
+          if (!valid) break
+        } else {
+          // 如果校验逻辑不是不包含，符合一个关键字则跳出循环（符合规则）
+          if (valid) break
         }
       }
-      return isMatch
+      return valid
     },
     /**
      * 校验步骤是否符合指定条件
@@ -157,17 +162,17 @@ export default {
       if (condition.position === 'current') {
         // 检查当前步骤的
         step = subIndex === undefined ? order.steps[stepIndex] : order.steps[stepIndex][subIndex]
-        isMatched = this.validateStep(step, condition.operator, condition.keywords)
+        isMatched = this.validateStr(step, condition.operator, condition.keywords)
       } else if (condition.position === 'before') {
         // 检查当前步骤之前步骤的
         let len = Number(condition.positionNum)
         if (len > 0) {
-          // 之后的指定几步
+          // 之前的指定几步
           if (condition.stepType === 'notChild') {
             // 遍历指定的步骤
             for (let i = stepIndex - 1, min = stepIndex - len; i >= min; i--) {
               targetStep = order.steps[i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -175,7 +180,7 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex - 1, min = subIndex - len; i >= min; i--) {
               targetStep = order.steps[stepIndex][i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -186,7 +191,7 @@ export default {
             // 遍历指定的步骤
             for (let i = stepIndex - 1; i >= 0; i--) {
               targetStep = order.steps[i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -194,7 +199,7 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex - 1; i >= 0; i--) {
               targetStep = order.steps[stepIndex][i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -209,7 +214,7 @@ export default {
             // 遍历指定的步骤
             for (let i = stepIndex + 1, max = stepIndex + len + 1; i < max; i++) {
               targetStep = order.steps[i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -217,7 +222,7 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex + 1, max = subIndex + len + 1; i < max; i++) {
               targetStep = order.steps[stepIndex][i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -228,7 +233,7 @@ export default {
             // 遍历指定的步骤
             for (let i = stepIndex + 1, max = order.steps.length; i < max; i++) {
               targetStep = order.steps[i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -236,7 +241,7 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < max; i++) {
               targetStep = order.steps[stepIndex][i]
-              isMatched = this.validateStep(targetStep, condition.operator, condition.keywords)
+              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -298,28 +303,22 @@ export default {
      */
     async validateRule ({ order, stepType, step, stepNum }) {
       let valid = false
-      let keywords
       this.simpleRule = await db.simpleRule.toArray()
-      this.simpleRule.filter(rule => {
+      const rules = this.simpleRule.filter(rule => {
         // 获取与步骤类型相同的规则
         return rule.step === stepType
-      }).forEach(async rule => { // 遍历规则
-        keywords = rule.keywords
+      })
+
+      rules.forEach(async rule => { // 遍历规则
         // 遍历规则中的关键字
-        for (let i = 0, len = keywords.length; i < len; i++) {
-          valid = strUtils[rule.operator](step, keywords[i])
-          if (valid) {
-            // 如果有符合一个关键字，跳出该循环
-            break
-          }
-        }
+        valid = this.validateStr(step, rule.operator, rule.keywords)
         if (!valid) {
           // 如果所有关键字都不符合，将该步骤添加到校核结果中
           await this.addCheckResult({
             order,
             stepNum,
             step,
-            errorMsg: rule.errorMsg
+            errorMsg: `通用逻辑：${rule.errorMsg}`
           })
         }
       })
@@ -332,7 +331,7 @@ export default {
       // 遍历专用复杂规则
       rules.forEach(rule => {
         const taskKeywords = rule.taskCondition.keywords
-        const isMatched = this.validateStep(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
         const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
         if (isMatched && isMatchedWorkplace) {
           // 任务符合规则的任务条件和工作站点
@@ -357,7 +356,7 @@ export default {
       // 遍历规则
       rules.forEach(rule => {
         const taskKeywords = rule.taskCondition.keywords
-        const isMatched = this.validateStep(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
         const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
         if (isMatched && isMatchedWorkplace) {
           // 任务符合规则的任务条件和工作站点
@@ -375,16 +374,23 @@ export default {
             stepTmp = step
             if (!Array.isArray(step)) {
               // 非子步骤
-              valid = this.validateStep(step, operator, keywords)
+              valid = this.validateStr(step, operator, keywords)
               if (isIn) {
-                // 如果需要包含，有一个步骤包含关键字则跳出循环（符合规则）
+                // 如果校验逻辑是包含，有一个步骤符合关键字条件则跳出循环（符合规则）
                 if (valid) break
               } else {
-                // 如果是不可包含，有一个步骤包含关键字则跳出循环（违反规则）
+                // 如果校验逻辑不是包含，需要遍历所有步骤
                 if (!valid) {
                   stepNum = `${idx + 1}`
-                  break
+                  this.addCheckResult({
+                    order,
+                    stepNum,
+                    step: stepNum ? stepTmp : '',
+                    errorMsg: `专用逻辑：${rule.errorMsg}`
+                  })
                 }
+                // 合法性需要重置为True
+                valid = true
               }
             } else {
               let subStep
@@ -392,26 +398,34 @@ export default {
                 // 子步骤
                 subStep = step[subIdx]
                 stepTmp = subStep
-                valid = this.validateStep(subStep, operator, keywords)
+                valid = this.validateStr(subStep, operator, keywords)
                 if (isIn) {
-                  // 如果需要包含，有一个步骤包含关键字则跳出循环（符合规则）
+                  // 如果校验逻辑是包含，有一个步骤符合关键字条件则跳出循环（符合规则）
                   if (valid) break
                 } else {
-                  // 如果是不可包含，有一个步骤包含关键字则跳出循环（违反规则）
+                  // 如果校验逻辑不是包含，需要遍历所有步骤
                   if (!valid) {
                     stepNum = subIdx > 0 ? `${idx + 1}.${subIdx}` : `${idx + 1}`
-                    break
+                    this.addCheckResult({
+                      order,
+                      stepNum,
+                      step: stepNum ? stepTmp : '',
+                      errorMsg: `专用逻辑：${rule.errorMsg}`
+                    })
                   }
+                  // 合法性需要重置为True
+                  valid = true
                 }
               }
             }
           }
+          // 校验逻辑是包含时
           if (!valid) {
             this.addCheckResult({
               order,
               stepNum,
               step: stepNum ? stepTmp : '',
-              errorMsg: rule.errorMsg
+              errorMsg: `专用逻辑：${rule.errorMsg}`
             })
           }
         }
@@ -450,11 +464,11 @@ export default {
           subIndex
         })
       }
-      await this.checkVerb({
-        order,
-        step,
-        stepNum
-      })
+      // await this.checkVerb({
+      //   order,
+      //   step,
+      //   stepNum
+      // })
     },
     /**
      * 检查动词搭配
@@ -618,7 +632,7 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 10000; i < len; i++) {
+      for (let i = 1, len = 1000; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
           continue
@@ -660,9 +674,6 @@ export default {
             task.steps.push(step[4])
           }
         }
-
-        // 清空上次校核结果
-        db.checkResult.clear()
       }
       this.isUploading = false
       this.$message.success('操作票导入成功')
