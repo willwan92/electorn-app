@@ -17,7 +17,8 @@ export const strUtils = {
    * @param { String } target 目标字符串
    * @returns Boolean
    */
-  in: function (str, target) {
+  in: function (string, target) {
+    const str = string.trim()
     if (!target.includes('...')) {
       return str['includes'](target)
     } else {
@@ -26,7 +27,8 @@ export const strUtils = {
       return reg.test(str)
     }
   },
-  notIn: function (str, target) {
+  notIn: function (string, target) {
+    const str = string.trim()
     if (!target.includes('...')) {
       return !str['includes'](target)
     } else {
@@ -35,10 +37,12 @@ export const strUtils = {
       return !reg.test(str)
     }
   },
-  equal: function (str, target) {
+  equal: function (string, target) {
+    const str = string.trim()
     return str === target
   },
-  startsWith: function (str, target) {
+  startsWith: function (string, target) {
+    const str = string.trim()
     if (!target.includes('...')) {
       return _.startsWith(str, target)
     } else {
@@ -47,7 +51,8 @@ export const strUtils = {
       return reg.test(str)
     }
   },
-  endsWith: function (str, target) {
+  endsWith: function (string, target) {
+    const str = string.trim()
     if (!target.includes('...')) {
       return _.endsWith(str, target)
     } else {
