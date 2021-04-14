@@ -170,15 +170,23 @@ export default {
           // 之前的指定几步
           if (condition.stepType === 'notChild') {
             // 遍历指定的步骤
-            for (let i = stepIndex - 1, min = stepIndex - len; i >= min; i--) {
+            let min = stepIndex - len
+            // 防止用户指定的超出
+            min = min < 0 ? 0 : min
+            for (let i = stepIndex - 1; i >= min; i--) {
               targetStep = order.steps[i]
+              // 如果是包含子步骤的步骤，跳过
+              if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
           } else if (condition.stepType === 'child' && subIndex) {
             // 遍历指定的步骤
-            for (let i = subIndex - 1, min = subIndex - len; i >= min; i--) {
+            let min = subIndex - len
+            // 防止用户指定的超出
+            min = min < 0 ? 0 : min
+            for (let i = subIndex - 1; i >= min; i--) {
               targetStep = order.steps[stepIndex][i]
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
@@ -191,6 +199,7 @@ export default {
             // 遍历指定的步骤
             for (let i = stepIndex - 1; i >= 0; i--) {
               targetStep = order.steps[i]
+              if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
@@ -211,16 +220,26 @@ export default {
         if (len > 0) {
           // 之后的指定几步
           if (condition.stepType === 'notChild') {
+            const length = order.steps.length
+            let max = stepIndex + len + 1
+            // 防止用户指定的超出
+            max = max > length ? length : max
             // 遍历指定的步骤
-            for (let i = stepIndex + 1, max = stepIndex + len + 1; i < max; i++) {
+            for (let i = stepIndex + 1; i < max; i++) {
               targetStep = order.steps[i]
+              if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
           } else if (condition.stepType === 'child' && subIndex) {
             // 遍历指定的步骤
-            for (let i = subIndex + 1, max = subIndex + len + 1; i < max; i++) {
+            const length = order.steps[stepIndex].length
+            let max = subIndex + len + 1
+            // 防止用户指定的超出
+            max = max > length ? length : max
+            // 遍历指定的步骤
+            for (let i = subIndex + 1; i < max; i++) {
               targetStep = order.steps[stepIndex][i]
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
@@ -233,6 +252,7 @@ export default {
             // 遍历指定的步骤
             for (let i = stepIndex + 1, max = order.steps.length; i < max; i++) {
               targetStep = order.steps[i]
+              if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
@@ -253,7 +273,7 @@ export default {
     /**
      * 校验复杂规则
      */
-    async validateComplexRule ({ order, rule, stepIndex, subIndex }) {
+    async validateComplexRule ({ order, rule, stepIndex, subIndex = undefined }) {
       // 遍历规则中所有条件
       let stepNum
       let step
@@ -278,11 +298,12 @@ export default {
       if (isMatched) {
         // 满足所有条件，执行校验规则
         if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
+          const errorMsg = rule.taskCondition ? `专用规则：${rule.errorMsg}` : `通用规则：${rule.errorMsg}`
           await this.addCheckResult({
             order,
             stepNum,
             step,
-            errorMsg: rule.errorMsg
+            errorMsg
           })
         }
       }
@@ -318,7 +339,7 @@ export default {
             order,
             stepNum,
             step,
-            errorMsg: `通用逻辑：${rule.errorMsg}`
+            errorMsg: `通用规则：${rule.errorMsg}`
           })
         }
       })
@@ -386,7 +407,7 @@ export default {
                     order,
                     stepNum,
                     step: stepNum ? stepTmp : '',
-                    errorMsg: `专用逻辑：${rule.errorMsg}`
+                    errorMsg: `专用规则：${rule.errorMsg}`
                   })
                 }
                 // 合法性需要重置为True
@@ -410,7 +431,7 @@ export default {
                       order,
                       stepNum,
                       step: stepNum ? stepTmp : '',
-                      errorMsg: `专用逻辑：${rule.errorMsg}`
+                      errorMsg: `专用规则：${rule.errorMsg}`
                     })
                   }
                   // 合法性需要重置为True
@@ -425,7 +446,7 @@ export default {
               order,
               stepNum,
               step: stepNum ? stepTmp : '',
-              errorMsg: `专用逻辑：${rule.errorMsg}`
+              errorMsg: `专用规则：${rule.errorMsg}`
             })
           }
         }
@@ -602,7 +623,7 @@ export default {
         if (order.taskName.includes(keywords[i].keyword)) {
           await this.addCheckResult({
             order,
-            errorMsg: `通用逻辑：${keywords[i].errorMsg}`
+            errorMsg: `通用规则：${keywords[i].errorMsg}`
           })
         }
       }
@@ -616,7 +637,7 @@ export default {
           workplace: operatingOrder.workplace,
           stepNum: '',
           step: '',
-          errorMsg: '通用逻辑：操作用时过短'
+          errorMsg: '通用规则：操作用时过短'
         }).catch(error => {
           console.log('Error: ' + (error.stack || error))
         })
@@ -632,7 +653,7 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 1000; i < len; i++) {
+      for (let i = 1, len = 10000; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
           continue

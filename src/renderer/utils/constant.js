@@ -42,7 +42,7 @@ const stepOptions = [
     value: 'sub-first',
   },
   {
-    label: '其他步骤（除了母步骤和最后一步）',
+    label: '其他步骤（除了母步骤、第一步和最后一步）',
     value: 'other'
   }
 ]
