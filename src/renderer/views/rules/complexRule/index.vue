@@ -37,7 +37,17 @@
       </el-col>
     </el-row>
 
-    <el-table :data="tableData" v-loading.body="isLoading" element-loading-text="Loading" border fit highlight-current-row style="width: 100%;">
+    <el-table
+      ref="multipleTable"
+      :data="tableData"
+      @select="toggleSelectRow"
+      @select-all="toggleSelectAll"
+      v-loading.body="isLoading"
+      element-loading-text="Loading"
+      border
+      style="width: 100%;">
+      <el-table-column type="selection" width="50" align="center">
+      </el-table-column>
       <el-table-column label='规则名称' prop="name">
       </el-table-column>
       <el-table-column label="步骤筛选条件" prop="conditionsText">
@@ -114,7 +124,37 @@ export default {
   created () {
     this.handleQuery()
   },
+  updated () {
+    this.tableData.forEach(row => {
+      row.enable && this.$refs.multipleTable.toggleRowSelection(row, true)
+    })
+  },
   methods: {
+    async toggleSelectRow (selection, row) {
+      const isSelected = selection.includes(row)
+      db.complexRule
+        .update(row.id, { enable: isSelected })
+        .then(() => {
+          this.$message.success(`规则 ${row.name} ${isSelected ? '已启用' : '已禁用'}`)
+        })
+        .catch(err => {
+          this.$message.error(`错误：${err.message}`)
+        })
+    },
+    async toggleSelectAll (selection) {
+      const isSelectAll = selection.length > 0
+      const promises = await this.tableData.map(row => {
+        if (row.enable !== isSelectAll) {
+          db.complexRule
+            .update(row.id, { enable: isSelectAll })
+            .catch(err => {
+              this.$message.error(`错误：${err.message}`)
+            })
+        }
+      })
+      await Promise.all(promises)
+      this.$message.success(`当前页规则已全部${isSelectAll ? '启用' : '禁用'}`)
+    },
     async handleImportClick (file) {
       await db.complexRule.clear()
       const rawdata = fs.readFileSync(file.path)

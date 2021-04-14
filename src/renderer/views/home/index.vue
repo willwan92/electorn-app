@@ -312,7 +312,7 @@ export default {
      * 遍历步骤复杂规则
      */
     async traverseComplexRule ({ order, stepIndex, subIndex = undefined }) {
-      const rules = await db.complexRule.toArray()
+      const rules = await db.complexRule.filter((rule) => rule.enable).toArray()
       // 遍历所有规则
       const promises = rules.map(async rule => {
         await this.validateComplexRule({ order, rule, stepIndex, subIndex })

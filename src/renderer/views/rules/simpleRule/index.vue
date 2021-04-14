@@ -47,7 +47,7 @@
       element-loading-text="Loading"
       border
       style="width: 100%;">
-      <el-table-column type="selection" prop="enable" width="50" align="center">
+      <el-table-column type="selection" width="50" align="center">
       </el-table-column>
       <el-table-column label='规则名称' prop="name">
       </el-table-column>
@@ -125,7 +125,6 @@ export default {
       stepOptions: Object.freeze(stepOptions),
       checkOperatorOptions: Object.freeze(checkOperatorOptions),
       tableData: [],
-      multipleSelection: [],
       name: '',
       currentPage: 1,
       pagesize: 10,
