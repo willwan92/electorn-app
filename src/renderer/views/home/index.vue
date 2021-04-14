@@ -373,7 +373,7 @@ export default {
      * 校验专用简单规则
      */
     async validateSpecialRule (order) {
-      const rules = await db.specialSimpleRule.toArray()
+      const rules = await db.specialSimpleRule.filter(rule => rule.enable).toArray()
       // 遍历规则
       rules.forEach(rule => {
         const taskKeywords = rule.taskCondition.keywords
@@ -653,7 +653,7 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 1000; i < len; i++) {
+      for (let i = 1, len = 10000; i < len; i++) {
         step = sheetsData[i]
         if (step.length < 11) {
           continue
