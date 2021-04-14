@@ -7,10 +7,10 @@
       <el-form-item label="操作步骤">
         <el-select v-model="form.step" placeholder="请选择操作步骤">
           <el-option
-            v-for="item in stepOptions"
-            :label="item.label"
-            :key="item.value"
-            :value="item.value"
+            v-for="(val, key) in stepOptions"
+            :label="val"
+            :key="key"
+            :value="key"
           ></el-option>
         </el-select>
       </el-form-item>

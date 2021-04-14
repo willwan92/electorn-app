@@ -38,12 +38,28 @@
       </el-col>
     </el-row>
 
-    <el-table :data="tableData" v-loading.body="isLoading" element-loading-text="Loading" border fit highlight-current-row style="width: 100%;">
+    <el-table
+      ref="multipleTable"
+      :data="tableData"
+      @select="toggleSelectRow"
+      @select-all="toggleSelectAll"
+      v-loading.body="isLoading"
+      element-loading-text="Loading"
+      border
+      style="width: 100%;">
+      <el-table-column type="selection" prop="enable" width="50" align="center">
+      </el-table-column>
       <el-table-column label='规则名称' prop="name">
       </el-table-column>
-      <el-table-column label="校验步骤" prop="step">
+      <el-table-column label="校验步骤">
+        <span slot-scope="scope">
+          {{ stepOptions[scope.row.step] }}
+        </span>
       </el-table-column>
-      <el-table-column label="校验逻辑" prop="operator">
+      <el-table-column label="校验逻辑">
+        <span slot-scope="scope">
+          {{ checkOperatorOptions[scope.row.operator] }}
+        </span>
       </el-table-column>
       <el-table-column label="校验关键字">
         <template slot-scope="scope">
@@ -98,7 +114,7 @@ import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
 import EditDialog from './components/EditDialog'
-import { operatorOptions, stepOptions } from '@/utils/constant'
+import { checkOperatorOptions, stepOptions } from '@/utils/constant'
 
 export default {
   components: {
@@ -106,7 +122,10 @@ export default {
   },
   data () {
     return {
+      stepOptions: Object.freeze(stepOptions),
+      checkOperatorOptions: Object.freeze(checkOperatorOptions),
       tableData: [],
+      multipleSelection: [],
       name: '',
       currentPage: 1,
       pagesize: 10,
@@ -119,7 +138,39 @@ export default {
   created () {
     this.handleQuery()
   },
+  updated () {
+    this.tableData.forEach(row => {
+      row.enable && this.$refs.multipleTable.toggleRowSelection(row, true)
+    })
+  },
   methods: {
+    async toggleSelectRow (selection, row) {
+      const isSelected = selection.includes(row)
+      row.enable = isSelected
+      db.simpleRule
+        .update(row.id, row)
+        .then(() => {
+          this.$message.success(`规则 ${row.name} ${isSelected ? '已启用' : '已禁用'}`)
+        })
+        .catch(err => {
+          this.$message.error(`错误：${err.message}`)
+        })
+    },
+    async toggleSelectAll (selection) {
+      const isSelectAll = selection.length > 0
+      const promises = await this.tableData.map(row => {
+        if (row.enable !== isSelectAll) {
+          row.enable = isSelectAll
+          db.simpleRule
+            .update(row.id, row)
+            .catch(err => {
+              this.$message.error(`错误：${err.message}`)
+            })
+        }
+      })
+      await Promise.all(promises)
+      this.$message.success(`当前页规则已全部${isSelectAll ? '启用' : '禁用'}`)
+    },
     async handleImportClick (file) {
       await db.simpleRule.clear()
       const rawdata = fs.readFileSync(file.path)
@@ -205,15 +256,6 @@ export default {
         .limit(this.pagesize)
         .toArray()
 
-      data = data.map(rule => {
-        rule.step = stepOptions.find(item => {
-          return item.value === rule.step
-        })['label']
-        rule.operator = operatorOptions.find(item => {
-          return item.value === rule.operator
-        })['label']
-        return rule
-      })
       if (data.length === 0 && this.currentPage > 1) {
         // 当前页无数据，自动回到上一页
         this.currentPage -= 1

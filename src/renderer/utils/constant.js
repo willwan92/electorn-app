@@ -24,28 +24,13 @@ const condPosOptions = {
   after: '且在此步骤之后'
 }
 
-const stepOptions = [
-  {
-    label: '所有步骤',
-    value: 'all',
-  },
-  {
-    label: '任务的第一步',
-    value: 'first',
-  },
-  {
-    label: '任务的最后一步',
-    value: 'last',
-  },
-  {
-    label: '母步骤',
-    value: 'sub-first',
-  },
-  {
-    label: '其他步骤（除了母步骤、第一步和最后一步）',
-    value: 'other'
-  }
-]
+const stepOptions = {
+  'all': '所有步骤',
+  'first': '任务的第一步',
+  'last': '任务的最后一步',
+  'sub-first': '母步骤',
+  'other': '其他步骤（除了母步骤、第一步和最后一步）'
+}
 
 const condOperatorOptions = {
   in: '包含',
