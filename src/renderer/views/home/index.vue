@@ -348,7 +348,7 @@ export default {
      * 校验专用复杂规则
      */
     async validateSpecialComplexRule (order) {
-      const rules = await db.specialComplexRule.toArray()
+      const rules = await db.specialComplexRule.filter(rule => rule.enable).toArray()
       // 遍历专用复杂规则
       rules.forEach(rule => {
         const taskKeywords = rule.taskCondition.keywords
