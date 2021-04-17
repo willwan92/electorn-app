@@ -1,6 +1,11 @@
 <template>
-  <el-form :model="form" :rules="rules" ref="form" label-width="130px" label-position="right" :inline="true">
-    <el-form-item label="规则名称" prop="name">
+  <el-form :model="form" ref="form" label-width="130px" label-position="right" :inline="true">
+    <el-form-item
+      label="规则名称"
+      prop="name"
+      :rules="[{
+        required: true, message: '请输入规则名称', trigger: 'blur'
+      }]">
       <el-input v-model="form.name"></el-input>
     </el-form-item>
     <!-- 筛选条件 -->
@@ -20,7 +25,7 @@
         @click="removeCondition(index)"
         icon="el-icon-minus"
         size="mini"></el-button>
-        步骤条件 {{index + 1 }}
+        步骤条件 {{ index + 1 }}
       </span>
       <span v-if="index !== 0">
         <el-form-item label="">
@@ -34,8 +39,12 @@
           </el-select>
         </el-form-item>
         <span v-show="condition.position !== 'current'">
-          <el-form-item label="" :prop="`conditions.${index}.positionNum`">
-            <el-input type="number" v-model="condition.positionNum" placeholder="不填代表之前/后所有步骤">
+          <el-form-item
+            :prop="`conditions.${index}.positionNum`"
+            :rules="[{
+              validator: validatStepNum, trigger: 'blur'
+            }]">
+            <el-input type="number" v-model.number="condition.positionNum" placeholder="不填代表之前/后所有步骤">
               <template slot="append">步</template>
             </el-input>
           </el-form-item>
@@ -58,7 +67,11 @@
         </el-select>
       </el-form-item>
       <span v-for="(item, kwIndex) in condition.keywords" class="keyword-wrapper" :key="kwIndex">
-        <el-form-item :prop="`conditions.${index}.keywords.${kwIndex}`">
+        <el-form-item
+          :prop="`conditions.${index}.keywords.${kwIndex}`"
+          :rules="[{
+            required: true, message: '请输入关键字', trigger: 'blur'
+          }]">
           <span v-if="kwIndex !== 0">或</span>
           <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
         </el-form-item>
@@ -78,8 +91,12 @@
         </el-select>
       </el-form-item>
       <span v-show="form.position !== 'current'">
-        <el-form-item label="" prop="positionNum">
-          <el-input type="number" v-model="form.positionNum" placeholder="不填代表之前/后所有步骤">
+        <el-form-item
+          prop="positionNum"
+          :rules="[{
+            validator: validatStepNum, trigger: 'blur'
+          }]">
+          <el-input type="number" v-model.number="form.positionNum" placeholder="不填代表之前/后所有步骤">
             <template slot="append">步</template>
           </el-input>
         </el-form-item>
@@ -103,18 +120,26 @@
         </el-select>
       </el-form-item>
     </div>
-    <div class="keywords">
+    <div class="keyword-wrapper">
       <el-form-item
         v-for="(item, index) in form.keywords"
         :key="index"
         :label="index === 0 ? '校验关键字' : ''"
-        :prop="`keywords.${index}`">
+        :prop="`keywords.${index}`"
+        :rules="[{
+          required: true, message: '请输入关键字', trigger: 'blur'
+        }]">
         <el-input v-model="form.keywords[index]" placeholder="请输入关键字"></el-input>
         <el-button v-if="index === 0" icon="el-icon-plus" @click="addCheckKeyword" circle></el-button>
         <el-button v-else icon="el-icon-minus" @click="removeCheckKeyword(index)" type="danger" circle></el-button>
       </el-form-item>
     </div>
-    <el-form-item label="报错信息" prop="errorMsg">
+    <el-form-item
+      label="报错信息"
+      prop="errorMsg"
+      :rules="[{
+        required: true, message: '请输入报错信息', trigger: 'blur'
+      }]">
       <el-input v-model="form.errorMsg" style="width: 424px;"></el-input>
     </el-form-item>
     <br>
@@ -127,7 +152,9 @@
 
 <script>
 import { operatorOptions, positionOptions, condPosOptions } from '@/utils/constant'
+import { validatPositiveInt } from '@/utils/validate'
 import db from '@/database/index'
+
 export default {
   data () {
     return {
@@ -151,22 +178,6 @@ export default {
         stepType: 'notChild',
         operator: 'in',
         keywords: ['']
-      },
-      rules: {
-        name: [{
-          required: true, message: '请输入规则名称', trigger: 'blur'
-        }],
-        operator: [{
-          required: true, message: '请选择校验逻辑', trigger: 'change'
-        }],
-        keywords: [
-          [{
-            required: true, message: '请输入关键字', trigger: 'blur'
-          }]
-        ],
-        errorMsg: [{
-          required: true, message: '请输入报错信息', trigger: 'blur'
-        }],
       }
     }
   },
@@ -182,30 +193,51 @@ export default {
     async getRuleDetail (id) {
       this.form = await db.complexRule.get(id)
     },
-    handleSubmit () {
-      if (!this.form.id) {
-        db.complexRule
-          .add({
-            ...this.form
-          })
-          .then(() => {
-            this.$message.success('添加成功')
-            this.$router.push('/rules/complexRule')
-          })
-          .catch(err => {
-            this.$message.error(`錯誤：${err.message || err}`)
-          })
+    validatStepNum (rule, value, callback) {
+      if (value === '') {
+        callback()
+      } else if (!validatPositiveInt(value)) {
+        callback(new Error('步数必须是正整数'))
       } else {
-        const rule = { ...this.form }
-        db.complexRule.update(this.form.id, rule)
-          .then(() => {
-            this.$message.success('修改成功')
-            this.$router.push('/rules/complexRule')
-          })
-          .catch(err => {
-            this.$message.error(`錯誤：${err.message || err}`)
-          })
+        callback()
       }
+    },
+    handleSubmit () {
+      // 防止重复提交
+      if (this.isSubmiting) return
+      this.$refs.form.validate(valid => {
+        if (!valid) return
+        this.isSubmiting = true
+        if (!this.form.id) {
+          db.complexRule
+            .add({
+              ...this.form
+            })
+            .then(() => {
+              this.$message.success('添加成功')
+              this.$router.push('/rules/complexRule')
+            })
+            .catch(err => {
+              this.$message.error(`錯誤：${err.message || err}`)
+            })
+            .finally(() => {
+              this.isSubmiting = false
+            })
+        } else {
+          const rule = { ...this.form }
+          db.complexRule.update(this.form.id, rule)
+            .then(() => {
+              this.$message.success('修改成功')
+              this.$router.push('/rules/complexRule')
+            })
+            .catch(err => {
+              this.$message.error(`錯誤：${err.message || err}`)
+            })
+            .finally(() => {
+              this.isSubmiting = false
+            })
+        }
+      })
     },
     handleCondPosChange (index) {
       const condition = this.form.conditions[index]
@@ -262,7 +294,7 @@ export default {
     }
     .el-button {
       margin-right: 10px;
-      padding: 1px;
+      padding: 1px !important;
     }
   }
   .condition {
