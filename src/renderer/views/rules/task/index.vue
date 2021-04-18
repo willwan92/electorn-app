@@ -13,7 +13,7 @@
       <br>
       <div v-for="(item, index) in form.keywords" :key="index">
         <el-form-item
-          :label="`关键字${index}：`"
+          :label="`关键字${index + 1}：`"
           :prop="`keywords.${index}.keyword`"
           :rules="{
             required: true, message: '请输入关键字', trigger: 'blur'

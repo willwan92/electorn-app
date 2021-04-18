@@ -91,7 +91,9 @@ export default {
   methods: {
     async edit (row) {
       this.dialogFormVisible = true
-      this.$refs.form.clearValidate()
+      this.$nextTick(() => {
+        this.$refs.form.clearValidate()
+      })
       if (!row) {
         this.form = {
           name: '',

@@ -47,6 +47,9 @@ export default {
   methods: {
     edit (row) {
       this.dialogFormVisible = true
+      this.$nextTick(() => {
+        this.$refs.form.clearValidate()
+      })
       if (!row) {
         this.form = {
           verb: '',
