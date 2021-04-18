@@ -1,7 +1,12 @@
 // 专用复杂规则编辑
 <template>
-  <el-form :model="form" label-width="130px" label-position="right" :inline="true">
-    <el-form-item label="规则名称">
+  <el-form :model="form" ref="form"  label-width="130px" label-position="right" :inline="true">
+    <el-form-item
+      label="规则名称"
+      prop="name"
+      :rules="[{
+        required: true, message: '请输入规则名称', trigger: 'blur'
+      }]">
       <el-input v-model="form.name"></el-input>
     </el-form-item>
     <br>
@@ -17,7 +22,12 @@
     </el-form-item>
     <br>
     <!-- 任务名称条件 -->
-    <el-form-item label="任务名称条件">
+    <el-form-item
+      label="任务名称条件"
+      prop="taskCondition.operator"
+      :rules="[{
+        required: true, message: '请选择任务名称筛选逻辑', trigger: 'blur'
+      }]">
       <el-select v-model="form.taskCondition.operator" placeholder="请选择筛选逻辑" style="margin-bottom: 10px;">
         <el-option
           v-for="item in operatorOptions"
@@ -27,14 +37,18 @@
         ></el-option>
       </el-select>
     </el-form-item>
-    <el-form-item label="" class="keywords">
-      <span v-for="(item, index) in form.taskCondition.keywords" :key="index">
+    <span v-for="(item, index) in form.taskCondition.keywords" :key="`taskKeyword${index}`" class="keyword-wrapper">
+      <el-form-item
+        :prop="`taskCondition.keywords.${index}`"
+        :rules="[{
+          required: true, message: '请输入关键字', trigger: 'blur'
+        }]">
         <span v-if="index !== 0">或</span>
         <el-input v-model="form.taskCondition.keywords[index]" placeholder="请输入关键字"></el-input>
-        <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddKeyword(form.taskCondition.keywords)" circle></el-button>
-        <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.taskCondition.keywords, index)" type="danger" circle></el-button>
-      </span>
-    </el-form-item>
+      </el-form-item>
+      <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddKeyword(form.taskCondition.keywords)" circle></el-button>
+      <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.taskCondition.keywords, index)" type="danger" circle></el-button>
+    </span>
 
     <!-- 步骤筛选条件 -->
     <div v-for="(condition, index) in form.conditions" class="condition" :key="index">
@@ -67,7 +81,11 @@
           </el-select>
         </el-form-item>
         <span v-show="condition.position !== 'current'">
-          <el-form-item label="">
+          <el-form-item
+            :prop="`conditions.${index}.positionNum`"
+            :rules="[{
+              validator: validatStepNum, trigger: 'blur'
+            }]">
             <el-input type="number" v-model="condition.positionNum" placeholder="不填代表之前/后所有步骤">
               <template slot="append">步</template>
             </el-input>
@@ -90,14 +108,18 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="" class="keywords">
-        <span v-for="(item, kwIndex) in condition.keywords" :key="kwIndex">
+      <span v-for="(item, kwIndex) in condition.keywords" class="keyword-wrapper" :key="kwIndex">
+        <el-form-item
+          :prop="`conditions.${index}.keywords.${kwIndex}`"
+          :rules="[{
+            required: true, message: '请输入关键字', trigger: 'blur'
+          }]">
           <span v-if="kwIndex !== 0">或</span>
           <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
-          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.conditions[index].keywords)" circle></el-button>
-          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.conditions[index].keywords, kwIndex)" type="danger" circle></el-button>
-        </span>
-      </el-form-item>
+        </el-form-item>
+        <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.conditions[index].keywords)" circle></el-button>
+        <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.conditions[index].keywords, kwIndex)" type="danger" circle></el-button>
+      </span>
     </div>
     <!-- 校验步骤 -->
     <div>
@@ -112,7 +134,11 @@
         </el-select>
       </el-form-item>
       <span v-show="form.position !== 'current'">
-        <el-form-item label="">
+        <el-form-item
+          prop="positionNum"
+          :rules="[{
+            validator: validatStepNum, trigger: 'blur'
+          }]">
           <el-input type="number" v-model="form.positionNum" placeholder="不填代表之前/后所有步骤">
             <template slot="append">步</template>
           </el-input>
@@ -137,22 +163,32 @@
         </el-select>
       </el-form-item>
     </div>
-    <div>
-       <el-form-item label="校验关键字"  class="keywords">
-        <span v-for="(item, kwIndex) in form.keywords" :key="kwIndex">
-          <span v-if="kwIndex !== 0">或</span>
-          <el-input v-model="form.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
-          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.keywords)" circle></el-button>
-          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.keywords, kwIndex)" type="danger" circle></el-button>
-        </span>
+    <div class="keyword-wrapper">
+      <el-form-item
+        v-for="(item, index) in form.keywords"
+        :key="index"
+        :label="index === 0 ? '校验关键字' : ''"
+        :prop="`keywords.${index}`"
+        :rules="[{
+          required: true, message: '请输入关键字', trigger: 'blur'
+        }]">
+        <span v-if="index !== 0">或</span>
+        <el-input v-model="form.keywords[index]" placeholder="请输入关键字"></el-input>
+        <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddKeyword(form.keywords)" circle></el-button>
+        <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.keywords, index)" type="danger" circle></el-button>
       </el-form-item>
     </div>
-    <el-form-item label="报错信息">
+    <el-form-item
+      label="报错信息"
+      prop="errorMsg"
+      :rules="[{
+        required: true, message: '请输入报错信息', trigger: 'blur'
+      }]">
       <el-input v-model="form.errorMsg" style="width: 424px;"></el-input>
     </el-form-item>
     <br>
     <el-form-item label=" ">
-      <el-button type="primary" @click="handleSubmit">确 定</el-button>
+      <el-button type="primary" :disabled="isSubmiting" :loading="isSubmiting"  @click="handleSubmit">确 定</el-button>
       <el-button @click="$router.push('/specialRules/complexRule')">返 回</el-button>
     </el-form-item>
   </el-form>
@@ -160,11 +196,12 @@
 
 <script>
 import { operatorOptions, positionOptions, condPosOptions, workplaceList } from '@/utils/constant'
+import { validatPositiveInt } from '@/utils/validate'
 import db from '@/database/index'
 export default {
   data () {
     return {
-      dialogFormVisible: false,
+      isSubmiting: false,
       workplaceList: Object.freeze(workplaceList),
       operatorOptions: Object.freeze(operatorOptions),
       positionOptions: Object.freeze(positionOptions),
@@ -173,7 +210,7 @@ export default {
         name: '',
         workplace: [],
         taskCondition: {
-          operator: '',
+          operator: 'in',
           keywords: ['']
         },
         conditions: [
@@ -205,31 +242,51 @@ export default {
     async getRuleDetail (id) {
       this.form = await db.specialComplexRule.get(id)
     },
-    handleSubmit () {
-      if (!this.form.id) {
-        db.specialComplexRule
-          .add({
-            ...this.form
-          })
-          .then(() => {
-            this.$message.success('添加成功')
-            this.$router.push('/specialRules/complexRule')
-          })
-          .catch(err => {
-            this.$message.error(`錯誤：${err.message || err}`)
-          })
+    validatStepNum (rule, value, callback) {
+      if (value === '') {
+        callback()
+      } else if (!validatPositiveInt(value)) {
+        callback(new Error('步数必须是正整数'))
       } else {
-        const rule = { ...this.form }
-        db.specialComplexRule.update(this.form.id, rule)
-          .then(() => {
-            this.dialogFormVisible = false
-            this.$message.success('修改成功')
-            this.$router.push('/specialRules/complexRule')
-          })
-          .catch(err => {
-            this.$message.error(`錯誤：${err.message || err}`)
-          })
+        callback()
       }
+    },
+    handleSubmit () {
+      // 防止重复提交
+      if (this.isSubmiting) return
+      this.$refs.form.validate(valid => {
+        if (!valid) return
+        this.isSubmiting = true
+        if (!this.form.id) {
+          db.specialComplexRule
+            .add({
+              ...this.form
+            })
+            .then(() => {
+              this.$message.success('添加成功')
+              this.$router.push('/specialRules/complexRule')
+            })
+            .catch(err => {
+              this.$message.error(`錯誤：${err.message || err}`)
+            })
+            .finally(() => {
+              this.isSubmiting = false
+            })
+        } else {
+          const rule = { ...this.form }
+          db.specialComplexRule.update(this.form.id, rule)
+            .then(() => {
+              this.$message.success('修改成功')
+              this.$router.push('/specialRules/complexRule')
+            })
+            .catch(err => {
+              this.$message.error(`錯誤：${err.message || err}`)
+            })
+            .finally(() => {
+              this.isSubmiting = false
+            })
+        }
+      })
     },
     handleCondPosChange (index) {
       const condition = this.form.conditions[index]
@@ -269,14 +326,18 @@ export default {
   .el-select {
     width: 200px;
   }
-  .keywords {
+  .keyword-wrapper {
+    line-height: 32px;
+    .el-form-item {
+      margin-right: 0;
+    }
     .el-input {
       width: auto;
       margin-bottom: 5px;
     }
     .el-button {
       margin-right: 10px;
-      padding: 1px;
+      padding: 1px !important;
     }
   }
   .condition {
