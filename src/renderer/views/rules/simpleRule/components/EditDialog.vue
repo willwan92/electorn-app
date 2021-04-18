@@ -1,10 +1,20 @@
 <template>
   <el-dialog custom-class="dialog" width="600px" :title="form.id ? '编辑简单规则' : '新建简单规则'" :visible.sync="dialogFormVisible">
-    <el-form :model="form" :rules="rules" ref="form" label-width="100px">
-      <el-form-item label="规则名称" prop="name">
+    <el-form :model="form" ref="form" label-width="100px">
+      <el-form-item
+        label="规则名称"
+        prop="name"
+        :rules="[{
+          required: true, message: '请输入规则名称', trigger: 'blur'
+        }]">
         <el-input v-model="form.name" autocomplete="off"></el-input>
       </el-form-item>
-      <el-form-item label="操作步骤" prop="step">
+      <el-form-item
+        label="操作步骤"
+        prop="step"
+        :rules="[{
+          required: true, message: '请选择操作步骤', trigger: 'blur'
+        }]">
         <el-select v-model="form.step" placeholder="请选择操作步骤">
           <el-option
             v-for="(val, key) in stepOptions"
@@ -14,7 +24,12 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="校验逻辑" prop="operator">
+      <el-form-item
+        label="校验逻辑"
+        prop="operator"
+        :rules="[{
+          required: true, message: '请选择校验逻辑', trigger: 'blur'
+        }]">
         <el-select v-model="form.operator" placeholder="请选择校验逻辑">
           <el-option
             v-for="item in operatorOptions"
@@ -29,12 +44,20 @@
         :key="index"
         :label="index === 0 ? '校验关键字' : ''"
         :class="index === form.keywords.length - 1 ? 'last-keyword' : 'keyword'"
-        :prop="`keywords.${index}`">
+        :prop="`keywords.${index}`"
+        :rules="[{
+          required: true, message: '请输入关键字', trigger: 'blur'
+        }]">
         <el-input v-model="form.keywords[index]" placeholder="请输入关键字，关键字之间是或的关系"></el-input>
         <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
         <el-button class="btn-del" v-else icon="el-icon-minus" @click="handleRemoveClick(index)" type="danger" circle></el-button>
       </el-form-item>
-      <el-form-item label="报错信息" prop="errorMsg">
+      <el-form-item
+        label="报错信息"
+        prop="errorMsg"
+        :rules="[{
+          required: true, message: '请输入报错信息', trigger: 'blur'
+        }]">
         <el-input v-model="form.errorMsg"></el-input>
       </el-form-item>
     </el-form>
@@ -52,7 +75,6 @@ export default {
   name: 'EditDialog',
   data () {
     return {
-      formLabelWidth: '120px',
       dialogFormVisible: false,
       isSubmiting: false,
       operatorOptions: Object.freeze(operatorOptions),
@@ -63,31 +85,13 @@ export default {
         operator: '',
         keywords: [''],
         errorMsg: ''
-      },
-      rules: {
-        name: [{
-          required: true, message: '请输入规则名称', trigger: 'blur'
-        }],
-        step: [{
-          required: true, message: '请选择操作步骤', trigger: 'change'
-        }],
-        operator: [{
-          required: true, message: '请选择校验逻辑', trigger: 'change'
-        }],
-        keywords: [
-          [{
-            required: true, message: '请输入关键字', trigger: 'blur'
-          }]
-        ],
-        errorMsg: [{
-          required: true, message: '请输入报错信息', trigger: 'blur'
-        }],
       }
     }
   },
   methods: {
     async edit (row) {
       this.dialogFormVisible = true
+      this.$refs.form.clearValidate()
       if (!row) {
         this.form = {
           name: '',
@@ -102,13 +106,9 @@ export default {
     },
     handleAddClick () {
       this.form.keywords.push('')
-      this.rules.keywords.push([{
-        required: true, message: '请输入关键字', trigger: 'blur'
-      }])
     },
     handleRemoveClick (index) {
       this.form.keywords.splice(index, 1)
-      this.rules.keywords.splice(index, 1)
     },
     handleSubmit () {
       // 防止重复提交
