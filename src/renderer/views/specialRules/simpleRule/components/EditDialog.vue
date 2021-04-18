@@ -1,7 +1,12 @@
 <template>
   <el-dialog custom-class="dialog" width="600px" :title="form.id ? '编辑简单规则' : '新建简单规则'" :visible.sync="dialogFormVisible">
-    <el-form :model="form" :rules="rules" ref="form" label-width="auto">
-      <el-form-item label="规则名称" prop="name">
+    <el-form :model="form" ref="form" label-width="auto">
+      <el-form-item
+        label="规则名称"
+        prop="name"
+        :rules="[{
+          required: true, message: '请输入规则名称', trigger: 'blur'
+        }]">
         <el-input v-model="form.name" autocomplete="off"></el-input>
       </el-form-item>
       <el-form-item label="工作地点">
@@ -14,7 +19,13 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item class="keyword" label="任务名称条件" prop="taskCondition.operator">
+      <el-form-item
+        label="任务名称条件"
+        prop="taskCondition.operator"
+        :rules="[{
+          required: true, message: '请选择任务名称筛选逻辑', trigger: 'blur'
+        }]"
+        style="margin-bottom: 0;">
         <el-select v-model="form.taskCondition.operator" placeholder="请选择筛选逻辑">
           <el-option
             v-for="item in operatorOptions"
@@ -28,12 +39,20 @@
         v-for="(item, index) in form.taskCondition.keywords"
         :key="`cond-${index}`"
         :class="index === form.taskCondition.keywords.length - 1 ? 'last-keyword' : 'keyword'"
-        :prop="`taskCondition.keywords.${index}`">
+        :prop="`taskCondition.keywords.${index}`"
+        :rules="[{
+          required: true, message: '请输入关键字', trigger: 'blur'
+        }]">
         <el-input v-model="form.taskCondition.keywords[index]" placeholder="请输入关键字，关键字之间是或的关系"></el-input>
         <el-button v-if="index === 0" class="btn-del" icon="el-icon-plus" @click="handleAddCondKeyword" circle></el-button>
         <el-button class="btn-del" v-else icon="el-icon-minus" @click="handleRemoveCondKeyword(index)" type="danger" circle></el-button>
       </el-form-item>
-      <el-form-item label="校验逻辑" prop="operator">
+      <el-form-item
+        label="校验逻辑"
+        prop="operator"
+        :rules="[{
+          required: true, message: '请选择校验逻辑', trigger: 'blur'
+        }]">
         <el-select v-model="form.operator" placeholder="请选择校验逻辑">
           <el-option label="需包含" value="in"></el-option>
           <el-option label="不可包含" value="notIn"></el-option>
@@ -44,12 +63,20 @@
         :key="index"
         :label="index === 0 ? '校验关键字' : ''"
         :class="index === form.keywords.length - 1 ? 'last-keyword' : 'keyword'"
-        :prop="`keywords.${index}`">
+        :prop="`keywords.${index}`"
+        :rules="[{
+          required: true, message: '请输入关键字', trigger: 'blur'
+        }]">
         <el-input v-model="form.keywords[index]" placeholder="请输入关键字，关键字之间是或的关系"></el-input>
         <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddCheckKeyword" circle></el-button>
         <el-button class="btn-del" v-else icon="el-icon-minus" @click="handleRemoveCheckKeyword(index)" type="danger" circle></el-button>
       </el-form-item>
-      <el-form-item label="报错信息" prop="errorMsg">
+      <el-form-item
+        label="报错信息"
+        prop="errorMsg"
+        :rules="[{
+          required: true, message: '请输入报错信息', trigger: 'blur'
+        }]">
         <el-input v-model="form.errorMsg"></el-input>
       </el-form-item>
     </el-form>
@@ -76,50 +103,27 @@ export default {
         name: '',
         workplace: [],
         taskCondition: {
-          operator: '',
+          operator: 'in',
           keywords: ['']
         },
         operator: '',
         keywords: [''],
         errorMsg: ''
-      },
-      rules: {
-        name: [{
-          required: true, message: '请输入规则名称', trigger: 'blur'
-        }],
-        taskCondition: {
-          operator: [{
-            required: true, message: '请选择校验逻辑', trigger: 'change'
-          }],
-          keywords: [
-            [{
-              required: true, message: '请输入关键字', trigger: 'blur'
-            }]
-          ],
-        },
-        operator: [{
-          required: true, message: '请选择校验逻辑', trigger: 'change'
-        }],
-        keywords: [
-          [{
-            required: true, message: '请输入关键字', trigger: 'blur'
-          }]
-        ],
-        errorMsg: [{
-          required: true, message: '请输入报错信息', trigger: 'blur'
-        }],
       }
     }
   },
   methods: {
     async edit (row) {
       this.dialogFormVisible = true
+      this.$nextTick(() => {
+        this.$refs.form.clearValidate()
+      })
       if (!row) {
         this.form = {
           name: '',
           workplace: '',
           taskCondition: {
-            operator: '',
+            operator: 'in',
             keywords: ['']
           },
           operator: '',
@@ -132,23 +136,15 @@ export default {
     },
     handleAddCondKeyword () {
       this.form.taskCondition.keywords.push('')
-      this.rules.taskCondition.keywords.push([{
-        required: true, message: '请输入关键字', trigger: 'blur'
-      }])
     },
     handleRemoveCondKeyword (index) {
       this.form.taskCondition.keywords.splice(index, 1)
-      this.rules.taskCondition.keywords.splice(index, 1)
     },
     handleAddCheckKeyword () {
       this.form.keywords.push('')
-      this.rules.keywords.push([{
-        required: true, message: '请输入关键字', trigger: 'blur'
-      }])
     },
     handleRemoveCheckKeyword (index) {
       this.form.keywords.splice(index, 1)
-      this.rules.keywords.splice(index, 1)
     },
     handleSubmit () {
       // 防止重复提交
