@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-card header="校核操作票" v-loading.lock="isUploading"  :element-loading-text="uploadingText">
+    <el-card header="检查操作票" v-loading.lock="isUploading"  :element-loading-text="uploadingText">
       <el-form label-width="60px" size="small" :inline="true">
         <el-form-item label="操作票">
           <el-input v-model="operatingOrderFile" readonly="" style="width: 600px"></el-input>
@@ -13,12 +13,38 @@
             :before-upload="handleUpload">
             <el-button type="primary">选择操作票</el-button>
           </el-upload>
-          <el-button type="primary" :disabled="!operatingOrderFile" @click="handleCheck">开始校核</el-button>
+          <el-button type="primary" :disabled="!operatingOrderFile" @click="handleCheck">开始检查</el-button>
         </el-form-item>
       </el-form>
     </el-card>
     
-    <el-card header="校核结果">
+    <el-card>
+      <div slot="header" class="clearfix">
+        <span>检查结果: </span>
+        <el-select v-model="result" placeholder="请选择">
+          <el-option
+            v-for="item in resultOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <span style="float: right;">
+          <el-button
+            :loading="isExporting"
+            @click="handleExportClick"
+            type="primary"
+            icon="el-icon-download"
+          >
+            {{ isExporting ? '正在导出' : '导出' }}
+          </el-button>
+        </span>
+      </div>
+      <p style="margin-top: 0;">
+        概览：本次一共检查了<span class="red"> 1234 </span>张操作票，
+        共有<span class="red"> 23424 </span>个操作步骤，
+        其中一共有<span class="red"> 91 </span>处错误。
+      </p>
       <el-table :data="tableData" v-loading="isLoading" element-loading-text="Loading" border fit highlight-current-row style="width: 100%;">
         <el-table-column label="操作票号" prop="num">
         </el-table-column>
@@ -59,6 +85,13 @@ export default {
   name: 'home',
   data () {
     return {
+      result: 'last',
+      resultOptions: [
+        {
+          label: '最新一次',
+          value: 'last'
+        }
+      ],
       tableData: [],
       currentPage: 1,
       pagesize: 10,
@@ -67,6 +100,7 @@ export default {
       uploadingText: '加载中...',
       isUploading: false,
       isLoading: false,
+      isExporting: false,
       timeRule: null,
       nameRule: null,
       simpleRule: [],
@@ -77,6 +111,9 @@ export default {
     this.fetchTableData()
   },
   methods: {
+    handleExportClick () {
+      alert('导出')
+    },
     handleSizeChange (value) {
       this.pagesize = value
       this.handleQuery()
@@ -93,6 +130,7 @@ export default {
       this.isLoading = true
       // 获取总条数
       db.checkResult
+        .where('checkTime').equals()
         .count(num => {
           this.total = num
         })
@@ -111,9 +149,28 @@ export default {
       }
     },
     async handleCheck () {
+      this.checkTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
       this.isUploading = true
-      this.uploadingText = '正在校核...'
-      db.checkResult.clear()
+      this.uploadingText = '正在检查...'
+      const checkTimes = await db.checkTimes.toArray()
+      // 保留30次检查结果
+      if (checkTimes.length >= 30) {
+        const firstTime = checkTimes[0]
+        const firstTimeResult = await db
+          .checkResult
+          .where('checkTime')
+          .equals(firstTime.checkTime)
+          .toArray()
+          .map(item => item.id)
+        db.checkResult.bulkDelete(firstTimeResult)
+        db.checkTimes.delete(firstTime.id)
+      }
+
+      // 添加本次检查时间
+      db.checkTimes.add({
+        checkTime: this.checkTime
+      })
+      
       this.timeRule = await db.timeRule.get('gt')
       this.nameRule = await db.nameRule.get('notIn')
       const operatingOrder = await db.operatingOrder.toArray()
@@ -334,7 +391,7 @@ export default {
         // 遍历规则中的关键字
         valid = this.validateStr(step, rule.operator, rule.keywords)
         if (!valid) {
-          // 如果所有关键字都不符合，将该步骤添加到校核结果中
+          // 如果所有关键字都不符合，将该步骤添加检查结果中
           await this.addCheckResult({
             order,
             stepNum,
@@ -607,6 +664,7 @@ export default {
     },
     addCheckResult ({ order, stepNum = '', step = '', errorMsg }) {
       return db.checkResult.add({
+        checkTime: this.checkTime,
         num: order.num,
         taskName: order.taskName,
         workplace: order.workplace,
@@ -709,5 +767,8 @@ export default {
 <style rel="stylesheet/scss" lang="scss" scoped>
 .upload {
   display: inline-block;
+}
+.red {
+  color: #F56C6C;
 }
 </style>
