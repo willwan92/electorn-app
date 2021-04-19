@@ -21,12 +21,15 @@
     <el-card>
       <div slot="header" class="clearfix">
         <span>检查结果: </span>
-        <el-select v-model="result" placeholder="请选择">
+        <el-select
+          v-model="checkTime"
+          @change="handleQuery"
+          placeholder="请选择历史检查时间">
           <el-option
-            v-for="item in resultOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
+            v-for="item in checkTimeOptions"
+            :key="item"
+            :label="item"
+            :value="item">
           </el-option>
         </el-select>
         <span style="float: right;">
@@ -40,10 +43,10 @@
           </el-button>
         </span>
       </div>
-      <p style="margin-top: 0;">
-        概览：本次一共检查了<span class="red"> 1234 </span>张操作票，
-        共有<span class="red"> 23424 </span>个操作步骤，
-        其中一共有<span class="red"> 91 </span>处错误。
+      <p v-show="!isLoading" style="margin-top: 0;">
+        概览：本次一共检查了<span class="red">{{ operatingOrderAmount }}</span>张操作票，
+        共有<span class="red">{{ stepAmount }}</span>个操作步骤，
+        其中一共有<span class="red">{{ total }}</span>处错误。
       </p>
       <el-table :data="tableData" v-loading="isLoading" element-loading-text="Loading" border fit highlight-current-row style="width: 100%;">
         <el-table-column label="操作票号" prop="num">
@@ -85,18 +88,15 @@ export default {
   name: 'home',
   data () {
     return {
-      result: 'last',
-      resultOptions: [
-        {
-          label: '最新一次',
-          value: 'last'
-        }
-      ],
+      checkTime: '',
+      checkTimeOptions: [],
       tableData: [],
       currentPage: 1,
       pagesize: 10,
       total: 0,
       operatingOrderFile: '',
+      operatingOrderAmount: 0,
+      stepAmount: 0,
       uploadingText: '加载中...',
       isUploading: false,
       isLoading: false,
@@ -106,11 +106,19 @@ export default {
       simpleRule: [],
     }
   },
-  created () {
+  async created () {
     this.operatingOrderFile = localStorage.getItem('operatingOrderFile')
-    this.fetchTableData()
+    await this.getCheckTimeOptions()
+    this.handleQuery()
   },
   methods: {
+    async getCheckTimeOptions () {
+      const checkTimes = await db.checkTimes.toArray()
+      if (checkTimes.length) {
+        this.checkTimeOptions = checkTimes.map(item => item.checkTime)
+        this.checkTime = checkTimes[0]
+      }
+    },
     handleExportClick () {
       alert('导出')
     },
@@ -127,15 +135,20 @@ export default {
       this.fetchTableData()
     },
     async fetchTableData () {
+      if (!this.checkTime) return
       this.isLoading = true
       // 获取总条数
       db.checkResult
-        .where('checkTime').equals()
+        .where('checkTime')
+        .equals(this.checkTime)
         .count(num => {
           this.total = num
+          console.log(num)
         })
       // 获取数据
       const data = await db.checkResult
+        .where('checkTime')
+        .equals(this.checkTime)
         .offset(this.pagesize * (this.currentPage - 1))
         .limit(this.pagesize)
         .toArray()
@@ -149,12 +162,34 @@ export default {
       }
     },
     async handleCheck () {
-      this.checkTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
-      this.isUploading = true
+      this.isLoading = true
       this.uploadingText = '正在检查...'
+      this.stepAmount = 0
+      this.checkTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
+      this.checkTimeOptions.push(this.checkTime)
+      // 添加本次检查时间
+      db.checkTimes.add({
+        checkTime: this.checkTime
+      })
+      this.timeRule = await db.timeRule.get('gt')
+      this.nameRule = await db.nameRule.get('notIn')
+      const operatingOrder = await db.operatingOrder.toArray()
+      // 遍历所有操作票
+      const promises = operatingOrder.map(async order => {
+        await this.checkTimeLength(order)
+        await this.checkTaskName(order)
+        await this.checkSteps(order)
+        await this.validateSpecialRule(order)
+        await this.validateSpecialComplexRule(order)
+      })
+      await Promise.all(promises)
+      this.operatingOrderAmount = operatingOrder.length
+      this.handleQuery()
+      this.isLoading = false
+
+      // 保留30次检查结果（放在检查之后，减少检查耗时）
       const checkTimes = await db.checkTimes.toArray()
-      // 保留30次检查结果
-      if (checkTimes.length >= 30) {
+      if (checkTimes.length > 30) {
         const firstTime = checkTimes[0]
         const firstTimeResult = await db
           .checkResult
@@ -164,27 +199,8 @@ export default {
           .map(item => item.id)
         db.checkResult.bulkDelete(firstTimeResult)
         db.checkTimes.delete(firstTime.id)
+        this.checkTimeOptions.splice(-1, 1)
       }
-
-      // 添加本次检查时间
-      db.checkTimes.add({
-        checkTime: this.checkTime
-      })
-      
-      this.timeRule = await db.timeRule.get('gt')
-      this.nameRule = await db.nameRule.get('notIn')
-      const operatingOrder = await db.operatingOrder.toArray()
-      // 遍历所有操作票
-      const promises = operatingOrder.map(async order => {
-        await this.checkTime(order)
-        await this.checkTaskName(order)
-        await this.checkSteps(order)
-        await this.validateSpecialRule(order)
-        await this.validateSpecialComplexRule(order)
-      })
-      await Promise.all(promises)
-      this.handleQuery()
-      this.isUploading = false
     },
     /**
      * 校验字符串中是否符合关键字条件
@@ -591,6 +607,8 @@ export default {
     async checkSteps (order) {
       const promises = order.steps.map(async (step, stepIndex) => {
         if (!Array.isArray(step)) {
+          // 统计步骤数
+          this.stepAmount += 1
           let stepNum = stepIndex + 1
           if (stepIndex === 0) {
             // 第一步
@@ -651,6 +669,8 @@ export default {
                 stepType: 'other'
               })
             }
+            // 统计步骤数
+            this.stepAmount += 1
             // 所有步骤
             await this.validateCommonRule({
               order,
@@ -686,7 +706,7 @@ export default {
         }
       }
     },
-    async checkTime (operatingOrder) {
+    async checkTimeLength (operatingOrder) {
       const timeLength = (new Date(operatingOrder.endTime) - new Date(operatingOrder.startTime)) / 60000
       if (timeLength <= this.timeRule.timeLength) {
         await db.checkResult.add({
@@ -711,9 +731,9 @@ export default {
       // 插入数据库
       let id, task, stepIndex, step, newId
       // 遍历所有操作步骤
-      for (let i = 1, len = 10000; i < len; i++) {
+      for (let i = 1, len = sheetsData.length; i < len; i++) {
         step = sheetsData[i]
-        if (step.length < 11) {
+        if (step.length < 7) {
           continue
         }
         newId = step[0] + step[2]
@@ -733,10 +753,6 @@ export default {
             steps: [step[4]],
             startTime: step[5],
             endTime: step[6],
-            unit: step[7],
-            date: step[8],
-            status: step[9],
-            department: step[10],
           }
         } else {
           // 属于当前操作任务的步骤
