@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-card header="检查操作票" v-loading.lock="isUploading"  :element-loading-text="uploadingText">
+    <el-card header="检查操作票" v-loading.lock="isOperating"  :element-loading-text="operatingText">
       <el-form label-width="60px" size="small" :inline="true">
         <el-form-item label="操作票">
           <el-input v-model="operatingOrderFile" readonly="" style="width: 600px"></el-input>
@@ -20,10 +20,10 @@
     
     <el-card>
       <div slot="header" class="clearfix">
-        <span>检查结果: </span>
+        <span>检查历史: </span>
         <el-select
           v-model="checkTime"
-          @change="handleQuery"
+          @change="handleCheckTimeChange"
           placeholder="请选择历史检查时间">
           <el-option
             v-for="item in checkTimeOptions"
@@ -43,7 +43,7 @@
           </el-button>
         </span>
       </div>
-      <p v-show="!isLoading" style="margin-top: 0;">
+      <p v-show="tableData.length && !isLoading" style="margin-top: 0;">
         概览：本次一共检查了<span class="red">{{ operatingOrderAmount }}</span>张操作票，
         共有<span class="red">{{ stepAmount }}</span>个操作步骤，
         其中一共有<span class="red">{{ total }}</span>处错误。
@@ -97,8 +97,10 @@ export default {
       operatingOrderFile: '',
       operatingOrderAmount: 0,
       stepAmount: 0,
-      uploadingText: '加载中...',
-      isUploading: false,
+      newOperatingOrderAmount: 0,
+      newStepAmount: 0,
+      operatingText: '加载中...',
+      isOperating: false,
       isLoading: false,
       isExporting: false,
       timeRule: null,
@@ -109,14 +111,27 @@ export default {
   async created () {
     this.operatingOrderFile = localStorage.getItem('operatingOrderFile')
     await this.getCheckTimeOptions()
-    this.handleQuery()
+    this.handleCheckTimeChange()
   },
   methods: {
+    handleCheckTimeChange () {
+      this.getCheckResultSummary()
+      this.handleQuery()
+    },
+    async getCheckResultSummary () {
+      if (!this.checkTime) return
+      const checkResultSummary = await db.checkResultSummary
+        .where('checkTime')
+        .equals(this.checkTime)
+        .toArray()
+      this.stepAmount = checkResultSummary[0].stepAmount
+      this.operatingOrderAmount = checkResultSummary[0].operatingOrderAmount
+    },
     async getCheckTimeOptions () {
-      const checkTimes = await db.checkTimes.toArray()
-      if (checkTimes.length) {
-        this.checkTimeOptions = checkTimes.map(item => item.checkTime)
-        this.checkTime = checkTimes[0]
+      const checkResultSummary = await db.checkResultSummary.reverse().toArray()
+      if (checkResultSummary.length) {
+        this.checkTimeOptions = checkResultSummary.map(item => item.checkTime)
+        this.checkTime = this.checkTimeOptions[0]
       }
     },
     handleExportClick () {
@@ -136,6 +151,7 @@ export default {
     },
     async fetchTableData () {
       if (!this.checkTime) return
+      console.log(this.checkTime)
       this.isLoading = true
       // 获取总条数
       db.checkResult
@@ -143,7 +159,6 @@ export default {
         .equals(this.checkTime)
         .count(num => {
           this.total = num
-          console.log(num)
         })
       // 获取数据
       const data = await db.checkResult
@@ -162,15 +177,10 @@ export default {
       }
     },
     async handleCheck () {
-      this.isLoading = true
-      this.uploadingText = '正在检查...'
-      this.stepAmount = 0
-      this.checkTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
-      this.checkTimeOptions.push(this.checkTime)
-      // 添加本次检查时间
-      db.checkTimes.add({
-        checkTime: this.checkTime
-      })
+      this.isOperating = true
+      this.operatingText = '正在检查...'
+      this.newStepAmount = 0
+      this.newCheckTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
       this.timeRule = await db.timeRule.get('gt')
       this.nameRule = await db.nameRule.get('notIn')
       const operatingOrder = await db.operatingOrder.toArray()
@@ -183,22 +193,30 @@ export default {
         await this.validateSpecialComplexRule(order)
       })
       await Promise.all(promises)
-      this.operatingOrderAmount = operatingOrder.length
-      this.handleQuery()
-      this.isLoading = false
+      this.isOperating = false
+      this.checkTimeOptions.unshift(this.newCheckTime)
+      this.checkTime = this.newCheckTime
+      this.newOperatingOrderAmount = operatingOrder.length
+      // 添加本次检查概要
+      await db.checkResultSummary.add({
+        checkTime: this.newCheckTime,
+        stepAmount: this.newStepAmount,
+        operatingOrderAmount: this.newOperatingOrderAmount
+      })
+      this.handleCheckTimeChange()
 
       // 保留30次检查结果（放在检查之后，减少检查耗时）
-      const checkTimes = await db.checkTimes.toArray()
-      if (checkTimes.length > 30) {
-        const firstTime = checkTimes[0]
+      const checkResultSummary = await db.checkResultSummary.toArray()
+      if (checkResultSummary.length > 30) {
+        const firstTime = checkResultSummary[0]
         const firstTimeResult = await db
           .checkResult
           .where('checkTime')
           .equals(firstTime.checkTime)
           .toArray()
-          .map(item => item.id)
-        db.checkResult.bulkDelete(firstTimeResult)
-        db.checkTimes.delete(firstTime.id)
+        const firstTimeResultIdList = firstTimeResult.map(item => item.id)
+        db.checkResult.bulkDelete(firstTimeResultIdList)
+        db.checkResultSummary.delete(firstTime.id)
         this.checkTimeOptions.splice(-1, 1)
       }
     },
@@ -608,7 +626,7 @@ export default {
       const promises = order.steps.map(async (step, stepIndex) => {
         if (!Array.isArray(step)) {
           // 统计步骤数
-          this.stepAmount += 1
+          this.newStepAmount += 1
           let stepNum = stepIndex + 1
           if (stepIndex === 0) {
             // 第一步
@@ -670,7 +688,7 @@ export default {
               })
             }
             // 统计步骤数
-            this.stepAmount += 1
+            this.newStepAmount += 1
             // 所有步骤
             await this.validateCommonRule({
               order,
@@ -684,7 +702,7 @@ export default {
     },
     addCheckResult ({ order, stepNum = '', step = '', errorMsg }) {
       return db.checkResult.add({
-        checkTime: this.checkTime,
+        checkTime: this.newCheckTime,
         num: order.num,
         taskName: order.taskName,
         workplace: order.workplace,
@@ -706,24 +724,20 @@ export default {
         }
       }
     },
-    async checkTimeLength (operatingOrder) {
-      const timeLength = (new Date(operatingOrder.endTime) - new Date(operatingOrder.startTime)) / 60000
+    async checkTimeLength (order) {
+      const timeLength = (new Date(order.endTime) - new Date(order.startTime)) / 60000
       if (timeLength <= this.timeRule.timeLength) {
-        await db.checkResult.add({
-          num: operatingOrder.num,
-          taskName: operatingOrder.taskName,
-          workplace: operatingOrder.workplace,
+        this.addCheckResult({
+          order,
           stepNum: '',
           step: '',
           errorMsg: '通用规则：操作用时过短'
-        }).catch(error => {
-          console.log('Error: ' + (error.stack || error))
         })
       }
     },
     async handleUpload (file) {
-      this.isUploading = true
-      this.uploadingText = '正在导入操作票...'
+      this.isOperating = true
+      this.operatingText = '正在导入操作票...'
       await db.operatingOrder.clear()
       this.operatingOrderFile = file.path
       localStorage.setItem('operatingOrderFile', file.path)
@@ -770,7 +784,10 @@ export default {
           }
         }
       }
-      this.isUploading = false
+      db.operatingOrder.add(task).catch(error => {
+        console.log('Error: ' + (error.stack || error))
+      })
+      this.isOperating = false
       this.$message.success('操作票导入成功')
       this.handleQuery()
       // 返回 false, 自行处理excel数据
