@@ -2,7 +2,7 @@
   <div class="app-wrapper" :class="classObj">
     <sidebar class="sidebar-container"></sidebar>
     <div class="main-container">
-      <navbar></navbar>
+      <navbar class="navbar" @login="handleLogin"></navbar>
       <app-main></app-main>
     </div>
   </div>
@@ -34,6 +34,11 @@ export default {
         mobile: this.device === 'mobile'
       }
     }
+  },
+  methods: {
+    handleLogin () {
+      alert('ok')
+    }
   }
 }
 </script>
@@ -45,5 +50,12 @@ export default {
     position: relative;
     height: 100%;
     width: 100%;
+    padding-top: 50px;
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+    }
   }
 </style>

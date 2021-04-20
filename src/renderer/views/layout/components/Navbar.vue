@@ -4,7 +4,7 @@
     <breadcrumb></breadcrumb>
     <el-dropdown class="avatar-container" trigger="click">
       <div class="avatar-wrapper">
-        <el-avatar shape="square" :src="squareUrl"></el-avatar>
+        {{ user }}
         <i class="el-icon-caret-bottom"></i>
       </div>
       <el-dropdown-menu class="user-dropdown" slot="dropdown">
@@ -13,9 +13,16 @@
             首页
           </el-dropdown-item>
         </router-link>
-        <el-dropdown-item divided>
-          <span @click="logout" style="display:block;">退出</span>
-        </el-dropdown-item>
+        <span v-if="user === '未登录'">
+          <el-dropdown-item  divided>
+            <span @click="login">登录</span>
+          </el-dropdown-item>
+        </span>
+        <span v-else>
+          <el-dropdown-item divided>
+            <span @click="logout">退出</span>
+          </el-dropdown-item>
+        </span>
       </el-dropdown-menu>
     </el-dropdown>
   </el-menu>
@@ -29,6 +36,7 @@ import Hamburger from '@/components/Hamburger'
 export default {
   data () {
     return {
+      user: '未登录',
       squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
     }
   },
@@ -45,6 +53,9 @@ export default {
   methods: {
     toggleSideBar () {
       this.$store.dispatch('ToggleSideBar')
+    },
+    login () {
+      this.$emit('login')
     },
     logout () {
       this.$store.dispatch('LogOut').then(() => {
@@ -80,16 +91,12 @@ export default {
     .avatar-wrapper {
       cursor: pointer;
       margin-top: 5px;
-      position: relative;
       .user-avatar {
         width: 40px;
         height: 40px;
         border-radius: 10px;
       }
       .el-icon-caret-bottom {
-        position: absolute;
-        right: -20px;
-        top: 25px;
         font-size: 12px;
       }
     }
