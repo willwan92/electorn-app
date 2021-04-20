@@ -601,7 +601,7 @@ export default {
       if (subIndex === undefined) {
         // 非子步骤
         step = order.steps[stepIndex]
-        stepNum = stepIndex + 1
+        stepNum = `${stepIndex + 1}`
         await this.validateRule({
           order,
           step,
@@ -679,7 +679,7 @@ export default {
         if (!Array.isArray(step)) {
           // 统计步骤数
           this.newStepAmount += 1
-          let stepNum = stepIndex + 1
+          let stepNum = `${stepIndex + 1}`
           if (stepIndex === 0) {
             // 第一步
             await this.validateRule({
