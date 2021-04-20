@@ -81,6 +81,8 @@
 
 <script>
 import xlsx from 'node-xlsx'
+import fs from 'fs'
+import { remote } from 'electron'
 import db from '@/database/index'
 import { strUtils } from '@/utils/check'
 
@@ -134,8 +136,59 @@ export default {
         this.checkTime = this.checkTimeOptions[0]
       }
     },
-    handleExportClick () {
-      alert('导出')
+    async handleExportClick () {
+      this.isExporting = true
+      const data = await db.checkResult
+        .where('checkTime')
+        .equals(this.checkTime)
+        .sortBy('num')
+      let sheetData = data.map(item => {
+        return [
+          item.num,
+          item.taskName,
+          item.workplace,
+          item.stepNum,
+          item.step,
+          item.errorMsg
+        ]
+      })
+      sheetData.unshift(['操作票号', '操作任务', '地点', '操作顺序', '操作步骤', '错误信息'])
+      // 定义列宽
+      const options = {
+        '!cols': [
+          { wch: 10 },
+          { wch: 40 },
+          { wch: 15 },
+          { wch: 10 },
+          { wch: 40 },
+          { wch: 50 }
+        ]
+      }
+      const sheetBuffer = xlsx.build([{name: `操作票检查结果-${this.checkTime}`, data: sheetData, options: options}])
+      const desktop = remote.app.getPath('desktop')
+      const checkTime = this.$moment(this.checkTime).format('yyyyMMDDHHmmss')
+      this.saveFile({
+        filePath: desktop,
+        fileName: `操作票检查结果-${checkTime}`,
+        fileType: 'xlsx',
+        fileData: sheetBuffer,
+        num: 0
+      })
+      this.isExporting = false
+    },
+    saveFile ({ filePath, fileName, fileType, fileData, num = 0 }) {
+      const fullPath = num ? `${filePath}/${fileName}(${num}).${fileType}` : `${filePath}/${fileName}.${fileType}`
+      fs.writeFile(fullPath, fileData, { flag: 'ax' }, (err) => {
+        if (!err) {
+          this.$message.success(`${fileName} 已经保存到桌面！`)
+        } else {
+          if (err.code === 'EEXIST') {
+            this.saveFile({ filePath, fileName, fileType, fileData, num: num + 1 })
+          } else {
+            this.$message.error(err)
+          }
+        }
+      })
     },
     handleSizeChange (value) {
       this.pagesize = value
@@ -151,7 +204,6 @@ export default {
     },
     async fetchTableData () {
       if (!this.checkTime) return
-      console.log(this.checkTime)
       this.isLoading = true
       // 获取总条数
       db.checkResult
