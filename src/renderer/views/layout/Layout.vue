@@ -61,12 +61,5 @@ export default {
     position: relative;
     height: 100%;
     width: 100%;
-    padding-top: 50px;
-    .navbar {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      z-index: 1000;
-    }
   }
 </style>
