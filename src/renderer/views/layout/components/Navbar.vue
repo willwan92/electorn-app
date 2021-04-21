@@ -2,25 +2,23 @@
   <el-menu class="navbar" mode="horizontal">
     <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
     <breadcrumb></breadcrumb>
-    <el-dropdown class="avatar-container" trigger="click">
+    <el-dropdown class="avatar-container"  @command="handleCommand">
       <div class="avatar-wrapper">
-        {{ user }}
+        {{ isLogin ? username : '未登录' }}
         <i class="el-icon-caret-bottom"></i>
       </div>
       <el-dropdown-menu class="user-dropdown" slot="dropdown">
-        <router-link class="inlineBlock" to="/">
-          <el-dropdown-item>
-            首页
-          </el-dropdown-item>
-        </router-link>
-        <span v-if="user === '未登录'">
-          <el-dropdown-item  divided>
-            <span @click="login">登录</span>
+        <span v-if="!isLogin">
+          <el-dropdown-item command="handleLoginClick">
+            登录
           </el-dropdown-item>
         </span>
         <span v-else>
-          <el-dropdown-item divided>
-            <span @click="logout">退出</span>
+          <el-dropdown-item command="handleChangePwdClick">
+            修改密码
+          </el-dropdown-item>
+          <el-dropdown-item divided command="handleLogoutClick">
+            注销登录
           </el-dropdown-item>
         </span>
       </el-dropdown-menu>
@@ -29,7 +27,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
 
@@ -47,19 +45,29 @@ export default {
   computed: {
     ...mapGetters([
       'sidebar',
-      'avatar'
+      'avatar',
+      'username',
+      'isLogin'
     ])
   },
   methods: {
+    ...mapActions(['LogOut']),
+    handleCommand (command) {
+      this[command]()
+    },
     toggleSideBar () {
       this.$store.dispatch('ToggleSideBar')
     },
-    login () {
-      this.$emit('login')
+    handleChangePwdClick () {
+      this.$emit('change-pwd-click')
     },
-    logout () {
-      this.$store.dispatch('LogOut').then(() => {
-        location.reload() // 为了重新实例化vue-router对象 避免bug
+    handleLoginClick () {
+      this.$emit('login-click')
+    },
+    handleLogoutClick () {
+      this.LogOut().then(() => {
+        this.$message.success('已注销登录')
+        // location.reload() // 为了重新实例化vue-router对象 避免bug
       })
     }
   }

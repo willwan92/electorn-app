@@ -2,24 +2,32 @@
   <div class="app-wrapper" :class="classObj">
     <sidebar class="sidebar-container"></sidebar>
     <div class="main-container">
-      <navbar class="navbar" @login="handleLogin"></navbar>
+      <navbar
+        class="navbar"
+        @login-click="handleLoginClick"
+        @change-pwd-click="handleChangePwdCLick"
+      ></navbar>
       <app-main></app-main>
     </div>
+    <login-dialog ref="loginDialog"></login-dialog>
+    <change-pwd-dialog ref="changePwdDialog"></change-pwd-dialog>
   </div>
 </template>
 
 <script>
 import { Navbar, Sidebar, AppMain } from './components'
-import ResizeMixin from './mixin/ResizeHandler'
+import LoginDialog from './components/LoginDialog'
+import ChangePwdDialog from './components/ChangePwdDialog'
 
 export default {
   name: 'layout',
   components: {
+    LoginDialog,
+    ChangePwdDialog,
     Navbar,
     Sidebar,
     AppMain
   },
-  mixins: [ResizeMixin],
   computed: {
     sidebar () {
       return this.$store.state.app.sidebar
@@ -36,8 +44,11 @@ export default {
     }
   },
   methods: {
-    handleLogin () {
-      alert('ok')
+    handleLoginClick () {
+      this.$refs.loginDialog.show()
+    },
+    handleChangePwdCLick () {
+      this.$refs.changePwdDialog.show()
     }
   }
 }
