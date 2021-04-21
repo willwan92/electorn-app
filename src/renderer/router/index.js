@@ -23,11 +23,6 @@ Vue.use(Router)
 **/
 export const constantRouterMap = [
   {
-    path: '/login',
-    component: () => import('@/views/login/index'),
-    hidden: true
-  },
-  {
     path: '/',
     redirect: '/home/index'
   },
