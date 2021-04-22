@@ -1,4 +1,5 @@
 import { getToken } from '@/utils/auth'
+import { constantRouterMap, asyncRoutes } from '@/router/index'
 
 const user = {
   state: {
@@ -6,6 +7,7 @@ const user = {
     name: 'admin',
     password: 'admin',
     isLogin: false,
+    menuRoutes: constantRouterMap,
     avatar: '',
     roles: []
   },
@@ -23,6 +25,9 @@ const user = {
     SET_LOGIN_STATUS: (state, isLogin) => {
       state.isLogin = isLogin
     },
+    SET_MENU_ROUTES: (state, routes) => {
+      state.menuRoutes = routes
+    },
     SET_AVATAR: (state, avatar) => {
       state.avatar = avatar
     },
@@ -39,6 +44,7 @@ const user = {
       return new Promise((resolve, reject) => {
         if (username === state.name && password === state.password) {
           commit('SET_LOGIN_STATUS', true)
+          commit('SET_MENU_ROUTES', constantRouterMap.concat(asyncRoutes))
           resolve()
         } else {
           reject(new Error('用户名或密码错误'))
@@ -50,6 +56,7 @@ const user = {
     LogOut ({ commit, state }) {
       return new Promise((resolve, reject) => {
         commit('SET_LOGIN_STATUS', false)
+        commit('SET_MENU_ROUTES', constantRouterMap)
         resolve()
       })
     },

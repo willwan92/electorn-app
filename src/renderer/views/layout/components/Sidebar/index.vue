@@ -9,7 +9,7 @@
       text-color="#bfcbd9"
       active-text-color="#409EFF"
     >
-      <sidebar-item :routes="routes"></sidebar-item>
+      <sidebar-item :routes="menuRoutes"></sidebar-item>
     </el-menu>
   </scroll-bar>
 </template>
@@ -23,11 +23,9 @@ export default {
   components: { SidebarItem, ScrollBar },
   computed: {
     ...mapGetters([
-      'sidebar'
+      'sidebar',
+      'menuRoutes'
     ]),
-    routes () {
-      return this.$router.options.routes
-    },
     isCollapse () {
       return !this.sidebar.opened
     }
