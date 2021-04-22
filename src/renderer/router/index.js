@@ -46,31 +46,31 @@ export const asyncRoutes = [
     component: Layout,
     name: 'rules',
     redirect: '/rules/time',
-    meta: { title: '通用规则', icon: 'form' },
+    meta: { title: '通用规则', icon: 'rules' },
     children: [
       {
         path: 'time',
         name: 'time',
         component: () => import('@/views/rules/time/index'),
-        meta: { title: '操作时间规则', icon: 'form' }
+        meta: { title: '操作时间规则' }
       },
       {
         path: 'taskName',
         name: 'taskName',
         component: () => import('@/views/rules/task/index'),
-        meta: { title: '任务名称规则', icon: 'form' }
+        meta: { title: '任务名称规则' }
       },
       {
         path: 'simpleRule',
         name: 'simpleRule',
         component: () => import('@/views/rules/simpleRule/index'),
-        meta: { title: '步骤简单规则', icon: 'form' }
+        meta: { title: '步骤简单规则' }
       },
       {
         path: 'complexRule',
         name: 'complexRule',
         component: () => import('@/views/rules/complexRule/index'),
-        meta: { title: '步骤复杂规则', icon: 'form' }
+        meta: { title: '步骤复杂规则' }
       },
       {
         path: 'complexRuleEdit',
@@ -85,19 +85,19 @@ export const asyncRoutes = [
     component: Layout,
     name: 'specialRules',
     redirect: '/specialRules/simpleRule',
-    meta: { title: '专用规则', icon: 'form' },
+    meta: { title: '专用规则', icon: 'special-rules' },
     children: [
       {
         path: 'simpleRule',
         name: 'simpleRule',
         component: () => import('@/views/specialRules/simpleRule/index'),
-        meta: { title: '简单规则', icon: 'form' }
+        meta: { title: '简单规则' }
       },
       {
         path: 'complexRule',
         name: 'complexRule',
         component: () => import('@/views/specialRules/complexRule/index'),
-        meta: { title: '复杂规则', icon: 'form' }
+        meta: { title: '复杂规则' }
       },
       {
         path: 'complexRuleEdit',
@@ -115,7 +115,7 @@ export const asyncRoutes = [
         path: 'index',
         name: 'deviceLib',
         component: () => import('@/views/deviceLib/index'),
-        meta: { title: '设备双编库', icon: 'form' }
+        meta: { title: '设备双编库', icon: 'device' }
       }
     ]
   },
@@ -127,7 +127,7 @@ export const asyncRoutes = [
         path: 'index',
         name: 'verbLib',
         component: () => import('@/views/verbLib/index'),
-        meta: { title: '动词库', icon: 'form' }
+        meta: { title: '动词库', icon: 'dapei' }
       }
     ]
   }

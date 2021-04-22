@@ -107,6 +107,7 @@
     "sass": "^1.32.8",
     "sass-loader": "^7.0.3",
     "style-loader": "^0.21.0",
+    "svg-sprite-loader": "^6.0.5",
     "url-loader": "^1.0.1",
     "vue-html-loader": "^1.2.4",
     "vue-loader": "^15.2.4",
