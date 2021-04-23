@@ -35,6 +35,7 @@
         <span style="float: right;">
           <el-button
             :loading="isExporting"
+            :disabled="!checkTime"
             @click="handleExportClick"
             type="primary"
             icon="el-icon-download"
