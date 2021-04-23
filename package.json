@@ -21,12 +21,24 @@
   "build": {
     "productName": "chapiaopiao",
     "appId": "com.example.yourapp",
+    "copyright":"willwan92 <wilson3cy@163.com>",
     "directories": {
       "output": "build"
     },
     "files": [
       "dist/electron/**/*"
     ],
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "./build/icons/icon.ico",
+      "uninstallerIcon": "./build/icons/icon.ico",
+      "installerHeaderIcon": "./build/icons/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "查票票"
+    },
     "dmg": {
       "contents": [
         {
