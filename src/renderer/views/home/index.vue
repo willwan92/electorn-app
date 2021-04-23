@@ -766,6 +766,7 @@ export default {
       })
     },
     async checkTaskName (order) {
+      if (!this.nameRule || !Array.isArray(this.nameRule.keywords)) return
       const keywords = this.nameRule.keywords
       for (let i = 0, len = keywords.length; i < len; i++) {
         if (order.taskName.includes(keywords[i].keyword)) {
@@ -777,6 +778,7 @@ export default {
       }
     },
     async checkTimeLength (order) {
+      if (!this.timeRule) return
       const timeLength = (new Date(order.endTime) - new Date(order.startTime)) / 60000
       if (timeLength <= this.timeRule.timeLength) {
         this.addCheckResult({
