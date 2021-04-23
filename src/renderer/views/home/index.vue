@@ -3,7 +3,7 @@
     <el-card header="检查操作票" v-loading.lock="isOperating"  :element-loading-text="operatingText">
       <el-form label-width="60px" size="small" :inline="true">
         <el-form-item label="操作票">
-          <el-input v-model="operatingOrderFile" readonly="" style="width: 600px"></el-input>
+          <el-input v-model="operatingOrderFile" readonly="" style="width: 460px"></el-input>
         </el-form-item>
         <el-form-item>
           <el-upload

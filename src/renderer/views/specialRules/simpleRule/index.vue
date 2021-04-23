@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row>
-      <el-col :span="16">
+      <el-col :span="12">
         <el-form :inline="true">
           <el-form-item>
             <el-input class="inline" v-model="name" placeholder="请输入规则名称"></el-input>
@@ -11,7 +11,7 @@
           </el-form-item>
         </el-form>
       </el-col>
-      <el-col :span="8" style="text-align: right">
+      <el-col :span="12" style="text-align: right">
         <el-upload
           class="upload"
           action=""
