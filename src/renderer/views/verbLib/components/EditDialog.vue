@@ -73,7 +73,6 @@ export default {
       // 防止重复提交
       if (this.isSubmiting) return
       this.$refs.form.validate(valid => {
-        console.log(valid)
         if (!valid) return
         this.isSubmiting = true
         const { verb, nouns, id } = this.form

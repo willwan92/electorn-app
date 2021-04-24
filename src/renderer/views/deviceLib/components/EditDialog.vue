@@ -48,12 +48,10 @@ export default {
         }
       } else {
         this.form = row
-        console.log(this.form)
       }
     },
     handleSubmit () {
       const { workplace, deviceName, id } = this.form
-      console.log({ workplace, deviceName, id })
       if (!id) {
         db.device
           .add({ workplace, deviceName })
