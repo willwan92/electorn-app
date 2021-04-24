@@ -22,7 +22,7 @@
           action=""
           :show-file-list="false"
           :before-upload="handleUpload">
-          <el-button size="small">导入设备双编库</el-button>
+          <el-button size="small" icon="el-icon-upload2">导入</el-button>
         </el-upload>
         <el-button
           type="primary"
