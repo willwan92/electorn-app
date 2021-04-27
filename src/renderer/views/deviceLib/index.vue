@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row>
-      <el-col :span="16">
+      <el-col :span="18">
         <el-form :inline="true" size="small">
           <el-form-item>
             <el-select v-model="workplace" placeholder="请选择工作地点">
@@ -16,13 +16,13 @@
           </el-form-item>
         </el-form>
       </el-col>
-      <el-col :span="8" style="text-align: right">
+      <el-col :span="6" style="text-align: right">
         <el-upload
           class="upload"
           action=""
           :show-file-list="false"
           :before-upload="handleUpload">
-          <el-button size="small" icon="el-icon-upload2">导入</el-button>
+          <el-button size="small" icon="el-icon-upload2" :disabled="isUploading" :loading="isUploading">{{isUploading ? '正在导入' : '导入'}}</el-button>
         </el-upload>
         <el-button
           type="primary"
@@ -40,6 +40,8 @@
       <el-table-column label="工作地点" width="120" prop="workplace">
       </el-table-column>
       <el-table-column label="设备标识牌名称" prop="deviceName">
+      </el-table-column>
+      <el-table-column label="间隔" prop="interval">
       </el-table-column>
       <el-table-column fixed="right"
         label="操作"
@@ -96,6 +98,7 @@ export default {
       currentPage: 1,
       pagesize: 10,
       total: 0,
+      isUploading: false,
       isLoading: false
     }
   },
@@ -180,31 +183,39 @@ export default {
       }
     },
     async handleUpload (file) {
-      await db.device
-        .count()
-        .then(num => {
-          if (num) {
-            db.device.clear()
-          }
-        })
-
+      this.isUploading = true
+      await db.device.clear()
       const deviceSheets = xlsx.parse(file.path)
-      // 插入数据库
-      deviceSheets.forEach(workplace => {
-        workplace.data.forEach((device, index) => {
+      let interval = ''
+      let data = []
+      // 遍历不同工作地点表格，格式化双编设备数据
+      deviceSheets.forEach(async workplace => {
+        // 遍历表格中的设备
+        workplace.data.forEach(async (device, index) => {
+          // 从第五行开始
           if (index > 3 && device.length > 1) {
-            db.device.add({
+            if (device.length > 2) {
+              // 新的间隔
+              interval = device[2]
+            }
+            data.push({
+              interval,
               workplace: workplace.name,
               deviceName: device[1]
-            }).catch(error => {
-              console.log('Error: ' + (error.stack || error))
             })
           }
         })
       })
-
+      // 插入数据库
+      await db.device
+        .bulkAdd(data)
+        .catch(error => {
+          this.$message.error('错误：导入设备双编库失败，请重试。')
+          console.log('Error: ' + (error.stack || error))
+        })
+      this.isUploading = false
       this.$message.success('设备双编库导入成功')
-      this.fetchTableData()
+      // this.fetchTableData()
       // 返回 false, 自行处理excel数据
       return false
     }
