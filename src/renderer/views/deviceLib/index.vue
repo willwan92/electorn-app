@@ -82,7 +82,6 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
-import { workplaceList } from '@/utils/constant'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -92,9 +91,9 @@ export default {
   data () {
     return {
       tableData: [],
-      workplace: '500kV蝶岭站',
+      workplace: '',
       deviceName: '',
-      workplaceList: Object.freeze(workplaceList),
+      workplaceList: [],
       currentPage: 1,
       pagesize: 10,
       total: 0,
@@ -102,20 +101,18 @@ export default {
       isLoading: false
     }
   },
-  filters: {
-    statusFilter (status) {
-      const statusMap = {
-        published: 'success',
-        draft: 'gray',
-        deleted: 'danger'
-      }
-      return statusMap[status]
-    }
-  },
   created () {
+    this.getWorkplaceList()
     this.fetchTableData()
   },
   methods: {
+    getWorkplaceList () {
+      const workplaceList = localStorage.getItem('workplaceList')
+      if (workplaceList) {
+        this.workplaceList = JSON.parse(workplaceList)
+        this.workplace = this.workplaceList[0]
+      }
+    },
     deleteRow (row) {
       this.$confirm(`确认要删除设备 ${row.deviceName} 吗？`, '提示', {
         confirmButtonText: '确定',
@@ -184,14 +181,15 @@ export default {
     },
     async handleUpload (file) {
       this.isUploading = true
+      localStorage.removeItem('workplaceList')
       await db.device.clear()
       const deviceSheets = xlsx.parse(file.path)
       let interval = ''
       let data = []
       // 遍历不同工作地点表格，格式化双编设备数据
-      deviceSheets.forEach(async workplace => {
+      const workplaceList = deviceSheets.map(workplace => {
         // 遍历表格中的设备
-        workplace.data.forEach(async (device, index) => {
+        workplace.data.forEach((device, index) => {
           // 从第五行开始
           if (index > 3 && device.length > 1) {
             if (device.length > 2) {
@@ -205,7 +203,10 @@ export default {
             })
           }
         })
+        return workplace.name
       })
+      localStorage.setItem('workplaceList', JSON.stringify(workplaceList))
+      this.getWorkplaceList()
       // 插入数据库
       await db.device
         .bulkAdd(data)
@@ -215,7 +216,7 @@ export default {
         })
       this.isUploading = false
       this.$message.success('设备双编库导入成功')
-      // this.fetchTableData()
+      this.fetchTableData()
       // 返回 false, 自行处理excel数据
       return false
     }

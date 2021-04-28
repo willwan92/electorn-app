@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import { operatorOptions, workplaceList } from '@/utils/constant'
+import { operatorOptions } from '@/utils/constant'
 import db from '@/database/index'
 export default {
   name: 'EditDialog',
@@ -98,7 +98,7 @@ export default {
       dialogFormVisible: false,
       isSubmiting: false,
       operatorOptions: Object.freeze(operatorOptions),
-      workplaceList: Object.freeze(workplaceList),
+      workplaceList: [],
       form: {
         name: '',
         workplace: [],
@@ -113,8 +113,13 @@ export default {
     }
   },
   methods: {
+    getWorkplaceList () {
+      const workplaceList = localStorage.getItem('workplaceList')
+      workplaceList && (this.workplaceList = JSON.parse(workplaceList))
+    },
     async edit (row) {
       this.dialogFormVisible = true
+      this.getWorkplaceList()
       this.$nextTick(() => {
         this.$refs.form.clearValidate()
       })

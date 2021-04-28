@@ -195,14 +195,14 @@
 </template>
 
 <script>
-import { operatorOptions, positionOptions, condPosOptions, workplaceList } from '@/utils/constant'
+import { operatorOptions, positionOptions, condPosOptions } from '@/utils/constant'
 import { validatPositiveInt } from '@/utils/validate'
 import db from '@/database/index'
 export default {
   data () {
     return {
       isSubmiting: false,
-      workplaceList: Object.freeze(workplaceList),
+      workplaceList: [],
       operatorOptions: Object.freeze(operatorOptions),
       positionOptions: Object.freeze(positionOptions),
       condPosOptions: Object.freeze(condPosOptions),
@@ -232,6 +232,7 @@ export default {
   },
   beforeRouteEnter (to, from, next) {
     next(vm => {
+      vm.getWorkplaceList()
       const id = Number(to.query.id)
       if (id) {
         vm.getRuleDetail(id)
@@ -239,6 +240,10 @@ export default {
     })
   },
   methods: {
+    getWorkplaceList () {
+      const workplaceList = localStorage.getItem('workplaceList')
+      workplaceList && (this.workplaceList = JSON.parse(workplaceList))
+    },
     async getRuleDetail (id) {
       this.form = await db.specialComplexRule.get(id)
     },
