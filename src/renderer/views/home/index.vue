@@ -239,7 +239,9 @@ export default {
       const operatingOrder = await db.operatingOrder.toArray()
       // 遍历所有操作票
       const promises = operatingOrder.map(async order => {
+        // 不必await
         await this.checkTimeLength(order)
+        // 不必await
         await this.checkTaskName(order)
         await this.checkSteps(order)
         await this.validateSpecialRule(order)
@@ -603,6 +605,11 @@ export default {
         // 非子步骤
         step = order.steps[stepIndex]
         stepNum = `${stepIndex + 1}`
+        await this.validateDevice({
+          order,
+          step,
+          stepNum
+        })
         await this.validateRule({
           order,
           step,
@@ -617,6 +624,11 @@ export default {
         // 子步骤
         step = order.steps[stepIndex][subIndex]
         stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
+        await this.validateDevice({
+          order,
+          step,
+          stepNum
+        })
         await this.validateRule({
           order,
           step,
@@ -672,6 +684,32 @@ export default {
           step,
           stepNum,
           errorMsg: '动词和设备不一致'
+        })
+      }
+    },
+    async validateDevice ({ order, stepNum, step }) {
+      // 某一步骤中出现了（kV） ，则此步骤必须包含对应在（工作地点）相应的库中的（双编）
+      if (!step.includes('kV')) return
+      const workplace = order.workplace
+      const deviceList = db.device
+        .where('workplace')
+        .equals(workplace)
+        .toArray()
+      let valid = false
+      let device
+      // 遍历规则中的关键字
+      for (let i = 0, len = deviceList.length; i < len; i++) {
+        device = deviceList[i]
+        valid = step.includes(device)
+        if (step.includes(device)) break
+      }
+      if (!valid) {
+        // 步骤中不包含该工作地点的任意双编设备，将该步骤添加检查结果中
+        await this.addCheckResult({
+          order,
+          stepNum,
+          step,
+          errorMsg: '通用规则：双编错误'
         })
       }
     },
