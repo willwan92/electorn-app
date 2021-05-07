@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-card header="检查操作票" v-loading.lock="isOperating"  :element-loading-text="operatingText">
+    <el-card class="check-card" header="检查操作票" v-loading.lock="isOperating"  :element-loading-text="operatingText">
       <el-form label-width="60px" size="small" :inline="true">
         <el-form-item label="操作票">
           <el-input v-model="operatingOrderFile" readonly="" style="width: 460px"></el-input>
@@ -16,6 +16,7 @@
           <el-button type="primary" :disabled="!operatingOrderFile" @click="handleCheck">开始检查</el-button>
         </el-form-item>
       </el-form>
+      <el-progress v-if="checkProgress > -1" class="progress-bar" :percentage="checkProgress"></el-progress>
     </el-card>
     
     <el-card>
@@ -110,7 +111,8 @@ export default {
       nameRule: null,
       simpleRule: [],
       workplace: '',
-      deviceList: []
+      deviceList: [],
+      checkProgress: -1
     }
   },
   async created () {
@@ -240,7 +242,9 @@ export default {
       this.nameRule = await db.nameRule.get('notIn')
       const operatingOrder = await db.operatingOrder.toArray()
       // 遍历所有操作票
-      const promises = operatingOrder.map(async order => {
+      this.checkProgress = 0
+      const total = operatingOrder.length
+      const promises = operatingOrder.map(async (order, index) => {
         // 不必await
         await this.checkTimeLength(order)
         // 不必await
@@ -248,8 +252,10 @@ export default {
         await this.checkSteps(order)
         await this.validateSpecialRule(order)
         await this.validateSpecialComplexRule(order)
+        this.checkProgress = Math.floor((index + 1) / total * 100)
       })
       await Promise.all(promises)
+      this.checkProgress = -1
       this.isOperating = false
       this.checkTimeOptions.unshift(this.newCheckTime)
       this.checkTime = this.newCheckTime
@@ -902,5 +908,16 @@ export default {
 }
 .red {
   color: #F56C6C;
+}
+
+.check-card {
+  position: relative;
+}
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2001;
+  width: 100%;
 }
 </style>
