@@ -109,6 +109,8 @@ export default {
       timeRule: null,
       nameRule: null,
       simpleRule: [],
+      workplace: '',
+      deviceList: []
     }
   },
   async created () {
@@ -691,13 +693,17 @@ export default {
       // 某一步骤中出现了（kV） ，则此步骤必须包含对应在（工作地点）相应的库中的（双编）
       if (!step.includes('kV')) return
       const workplace = order.workplace
-      const deviceList = db.device
-        .where('workplace')
-        .equals(workplace)
-        .toArray()
+      if (workplace !== this.workplace) {
+        this.deviceList = db.device
+          .where('workplace')
+          .equals(workplace)
+          .toArray()
+      }
       let valid = false
       let device
-      // 遍历规则中的关键字
+      // 遍历所有双编设备
+      const deviceList = this.deviceList
+      if (!deviceList.length) return
       for (let i = 0, len = deviceList.length; i < len; i++) {
         device = deviceList[i]
         valid = step.includes(device)
