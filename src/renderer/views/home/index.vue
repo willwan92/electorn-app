@@ -16,7 +16,7 @@
           <el-button type="primary" :disabled="!operatingOrderFile" @click="handleCheck">开始检查</el-button>
         </el-form-item>
       </el-form>
-      <el-progress v-if="checkProgress > -1" class="progress-bar" :percentage="checkProgress"></el-progress>
+      <el-progress v-show="checkProgress < 100" class="progress-bar" :percentage="checkProgress"></el-progress>
     </el-card>
     
     <el-card>
@@ -112,7 +112,7 @@ export default {
       simpleRule: [],
       workplace: '',
       deviceList: [],
-      checkProgress: -1
+      checkProgress: 100
     }
   },
   async created () {
@@ -236,13 +236,13 @@ export default {
     async handleCheck () {
       this.isOperating = true
       this.operatingText = '正在检查...'
+      this.checkProgress = 0
       this.newStepAmount = 0
       this.newCheckTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
       this.timeRule = await db.timeRule.get('gt')
       this.nameRule = await db.nameRule.get('notIn')
       const operatingOrder = await db.operatingOrder.toArray()
       // 遍历所有操作票
-      this.checkProgress = 0
       const total = operatingOrder.length
       const promises = operatingOrder.map(async (order, index) => {
         // 不必await
@@ -255,7 +255,7 @@ export default {
         this.checkProgress = Math.floor((index + 1) / total * 100)
       })
       await Promise.all(promises)
-      this.checkProgress = -1
+      this.checkProgress = 100
       this.isOperating = false
       this.checkTimeOptions.unshift(this.newCheckTime)
       this.checkTime = this.newCheckTime
@@ -916,7 +916,7 @@ export default {
 .progress-bar {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 12px;
   z-index: 2001;
   width: 100%;
 }
