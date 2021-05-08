@@ -112,6 +112,7 @@ export default {
       simpleRule: [],
       workplace: '',
       deviceList: [],
+      checkResult: [],
       checkProgress: 100
     }
   },
@@ -239,16 +240,16 @@ export default {
       this.checkProgress = 0
       this.newStepAmount = 0
       this.newCheckTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
+      // 获取规则
       this.timeRule = await db.timeRule.get('gt')
       this.nameRule = await db.nameRule.get('notIn')
+      this.simpleRule = await db.simpleRule.toArray()
       const operatingOrder = await db.operatingOrder.toArray()
       // 遍历所有操作票
       const total = operatingOrder.length
       const promises = operatingOrder.map(async (order, index) => {
-        // 不必await
-        await this.checkTimeLength(order)
-        // 不必await
-        await this.checkTaskName(order)
+        this.checkTimeLength(order)
+        this.checkTaskName(order)
         await this.checkSteps(order)
         await this.validateSpecialRule(order)
         await this.validateSpecialComplexRule(order)
@@ -476,9 +477,8 @@ export default {
     /**
      * 校验步骤简单规则
      */
-    async validateRule ({ order, stepType, step, stepNum }) {
+    validateRule ({ order, stepType, step, stepNum }) {
       let valid = false
-      this.simpleRule = await db.simpleRule.toArray()
       const rules = this.simpleRule.filter(rule => {
         // 获取与步骤类型相同的规则
         return rule.enable && rule.step === stepType
@@ -488,8 +488,8 @@ export default {
         // 遍历规则中的关键字
         valid = this.validateStr(step, rule.operator, rule.keywords)
         if (!valid) {
-          // 如果所有关键字都不符合，将该步骤添加检查结果中
-          await this.addCheckResult({
+          // 如果不符合规则，将该步骤添加检查结果中
+          this.addCheckResult({
             order,
             stepNum,
             step,
@@ -618,7 +618,7 @@ export default {
           step,
           stepNum
         })
-        await this.validateRule({
+        this.validateRule({
           order,
           step,
           stepNum,
@@ -700,7 +700,7 @@ export default {
       if (!step.includes('kV')) return
       const workplace = order.workplace
       if (workplace !== this.workplace) {
-        this.deviceList = db.device
+        this.deviceList = await db.device
           .where('workplace')
           .equals(workplace)
           .toArray()
@@ -717,7 +717,7 @@ export default {
       }
       if (!valid) {
         // 步骤中不包含该工作地点的任意双编设备，将该步骤添加检查结果中
-        await this.addCheckResult({
+        this.addCheckResult({
           order,
           stepNum,
           step,
@@ -733,7 +733,7 @@ export default {
           let stepNum = `${stepIndex + 1}`
           if (stepIndex === 0) {
             // 第一步
-            await this.validateRule({
+            this.validateRule({
               order,
               step,
               stepNum,
@@ -741,7 +741,7 @@ export default {
             })
           } else if (stepIndex === (order.steps.length - 1)) {
             // 最后一步
-            await this.validateRule({
+            this.validateRule({
               order,
               step,
               stepNum,
@@ -749,7 +749,7 @@ export default {
             })
           } else {
             // 其他步骤
-            await this.validateRule({
+            this.validateRule({
               order,
               step,
               stepNum,
@@ -804,7 +804,7 @@ export default {
       await Promise.all(promises)
     },
     addCheckResult ({ order, stepNum = '', step = '', errorMsg }) {
-      return db.checkResult.add({
+      this.checkResult.push({
         checkTime: this.newCheckTime,
         num: order.num,
         taskName: order.taskName,
@@ -812,23 +812,21 @@ export default {
         stepNum: stepNum,
         step: step,
         errorMsg: errorMsg
-      }).catch(error => {
-        console.log('Error: ' + (error.stack || error))
       })
     },
-    async checkTaskName (order) {
-      if (!this.nameRule || !Array.isArray(this.nameRule.keywords)) return
+    checkTaskName (order) {
+      if (!this.nameRule) return
       const keywords = this.nameRule.keywords
       for (let i = 0, len = keywords.length; i < len; i++) {
         if (order.taskName.includes(keywords[i].keyword)) {
-          await this.addCheckResult({
+          this.addCheckResult({
             order,
             errorMsg: `通用规则：${keywords[i].errorMsg}`
           })
         }
       }
     },
-    async checkTimeLength (order) {
+    checkTimeLength (order) {
       if (!this.timeRule) return
       const timeLength = (new Date(order.endTime) - new Date(order.startTime)) / 60000
       if (timeLength <= this.timeRule.timeLength) {
