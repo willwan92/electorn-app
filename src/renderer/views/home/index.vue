@@ -45,7 +45,7 @@
           </el-button>
         </span>
       </div>
-      <p v-show="tableData.length && !isLoading" style="margin-top: 0;">
+      <p v-show="!isLoading" style="margin-top: 0;">
         概览：本次一共检查了<span class="red">{{ operatingOrderAmount }}</span>张操作票，
         共有<span class="red">{{ stepAmount }}</span>个操作步骤，
         其中一共有<span class="red">{{ total }}</span>处错误。
@@ -110,6 +110,9 @@ export default {
       timeRule: null,
       nameRule: null,
       simpleRule: [],
+      complexRule: [],
+      specialSimpleRule: [],
+      verbs: [],
       workplace: '',
       deviceList: [],
       checkResult: [],
@@ -237,25 +240,44 @@ export default {
     async handleCheck () {
       this.isOperating = true
       this.operatingText = '正在检查...'
+      this.checkResult = []
       this.checkProgress = 0
       this.newStepAmount = 0
       this.newCheckTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
-      // 获取规则
+      // 获取所有规则
       this.timeRule = await db.timeRule.get('gt')
+      this.checkProgress += 1
       this.nameRule = await db.nameRule.get('notIn')
+      this.checkProgress += 1
       this.simpleRule = await db.simpleRule.toArray()
+      this.checkProgress += 1
+      this.complexRule = await db.complexRule.filter((rule) => rule.enable).toArray()
+      this.checkProgress += 1
+      this.specialSimpleRule = await db.specialSimpleRule.filter(rule => rule.enable).toArray()
+      this.checkProgress += 1
+      this.specialComplexRule = await db.specialComplexRule.filter(rule => rule.enable).toArray()
+      this.checkProgress += 1
+      this.verbs = await db.verb.toArray()
+      this.checkProgress += 1
       const operatingOrder = await db.operatingOrder.toArray()
+      console.log(operatingOrder.length)
+      this.checkProgress = 10
       // 遍历所有操作票
       const total = operatingOrder.length
       const promises = operatingOrder.map(async (order, index) => {
         this.checkTimeLength(order)
         this.checkTaskName(order)
+        this.validateSpecialRule(order)
+        this.validateSpecialComplexRule(order)
         await this.checkSteps(order)
-        await this.validateSpecialRule(order)
-        await this.validateSpecialComplexRule(order)
-        this.checkProgress = Math.floor((index + 1) / total * 100)
+        this.checkProgress = Math.floor((index + 1) / total * 90) + 10
       })
       await Promise.all(promises)
+      await db.checkResult
+        .bulkAdd(this.checkResult)
+        .catch(() => {
+          this.$message.error('操作票导入失败，请重试')
+        })
       this.checkProgress = 100
       this.isOperating = false
       this.checkTimeOptions.unshift(this.newCheckTime)
@@ -428,7 +450,7 @@ export default {
     /**
      * 校验复杂规则
      */
-    async validateComplexRule ({ order, rule, stepIndex, subIndex = undefined }) {
+    validateComplexRule ({ order, rule, stepIndex, subIndex = undefined }) {
       // 遍历规则中所有条件
       let stepNum
       let step
@@ -454,7 +476,7 @@ export default {
         // 满足所有条件，执行校验规则
         if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
           const errorMsg = rule.taskCondition ? `专用规则：${rule.errorMsg}` : `通用规则：${rule.errorMsg}`
-          await this.addCheckResult({
+          this.addCheckResult({
             order,
             stepNum,
             step,
@@ -466,13 +488,12 @@ export default {
     /**
      * 遍历步骤复杂规则
      */
-    async traverseComplexRule ({ order, stepIndex, subIndex = undefined }) {
-      const rules = await db.complexRule.filter((rule) => rule.enable).toArray()
+    traverseComplexRule ({ order, stepIndex, subIndex = undefined }) {
+      const rules = this.complexRule
       // 遍历所有规则
-      const promises = rules.map(async rule => {
-        await this.validateComplexRule({ order, rule, stepIndex, subIndex })
+      rules.forEach(async rule => {
+        this.validateComplexRule({ order, rule, stepIndex, subIndex })
       })
-      await Promise.all(promises)
     },
     /**
      * 校验步骤简单规则
@@ -484,7 +505,7 @@ export default {
         return rule.enable && rule.step === stepType
       })
 
-      rules.forEach(async rule => { // 遍历规则
+      rules.forEach(rule => { // 遍历规则
         // 遍历规则中的关键字
         valid = this.validateStr(step, rule.operator, rule.keywords)
         if (!valid) {
@@ -501,8 +522,8 @@ export default {
     /**
      * 校验专用复杂规则
      */
-    async validateSpecialComplexRule (order) {
-      const rules = await db.specialComplexRule.filter(rule => rule.enable).toArray()
+    validateSpecialComplexRule (order) {
+      const rules = this.specialComplexRule
       // 遍历专用复杂规则
       rules.forEach(rule => {
         const taskKeywords = rule.taskCondition.keywords
@@ -526,8 +547,8 @@ export default {
     /**
      * 校验专用简单规则
      */
-    async validateSpecialRule (order) {
-      const rules = await db.specialSimpleRule.filter(rule => rule.enable).toArray()
+    validateSpecialRule (order) {
+      const rules = this.specialSimpleRule
       // 遍历规则
       rules.forEach(rule => {
         const taskKeywords = rule.taskCondition.keywords
@@ -624,7 +645,7 @@ export default {
           stepNum,
           stepType: 'all'
         })
-        await this.traverseComplexRule({
+        this.traverseComplexRule({
           order,
           stepIndex
         })
@@ -637,29 +658,30 @@ export default {
           step,
           stepNum
         })
-        await this.validateRule({
+        this.validateRule({
           order,
           step,
           stepNum,
           stepType: 'all'
         })
-        await this.traverseComplexRule({
+        this.traverseComplexRule({
           order,
           stepIndex,
           subIndex
         })
       }
-      // await this.checkVerb({
-      //   order,
-      //   step,
-      //   stepNum
-      // })
+      this.checkVerb({
+        order,
+        step,
+        stepNum
+      })
     },
     /**
      * 检查动词搭配
      */
-    async checkVerb ({ order, step, stepNum }) {
-      const verbs = await db.verb.toArray()
+    checkVerb ({ order, step, stepNum }) {
+      const verbs = this.verbs
+      if (!verbs.length) return
       const startsWith = strUtils['startsWith']
       const includes = strUtils['in']
       let verb
@@ -676,7 +698,7 @@ export default {
             if (nounValid) break
           }
           if (!nounValid) {
-            await this.addCheckResult({
+            this.addCheckResult({
               order,
               step,
               stepNum,
@@ -687,7 +709,7 @@ export default {
         }
       }
       if (!verbValid) {
-        await this.addCheckResult({
+        this.addCheckResult({
           order,
           step,
           stepNum,
@@ -767,7 +789,7 @@ export default {
             let stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
             if (subIndex === 0) {
               // 母步骤
-              await this.validateRule({
+              this.validateRule({
                 order,
                 stepNum,
                 step: subStep,
@@ -775,7 +797,7 @@ export default {
               })
             } else if (stepIndex === (order.steps.length - 1) && subIndex === (step.length - 1)) {
               // 最后一步
-              await this.validateRule({
+              this.validateRule({
                 order,
                 stepNum,
                 step: subStep,
@@ -783,7 +805,7 @@ export default {
               })
             } else {
               // 其他步骤
-              await this.validateRule({
+              this.validateRule({
                 order,
                 stepNum,
                 step: subStep,
@@ -847,6 +869,7 @@ export default {
       const sheetsData = xlsx.parse(file.path)[0].data
       // 插入数据库
       let id, task, stepIndex, step, newId
+      let taskList = []
       // 遍历所有操作步骤
       for (let i = 1, len = sheetsData.length; i < len; i++) {
         step = sheetsData[i]
@@ -855,10 +878,8 @@ export default {
         }
         newId = step[0] + step[2]
         if (id !== newId) {
-          // 不属于当前操作任务的步骤，把当前操作任务添加到数据库
-          db.operatingOrder.add(task).catch(error => {
-            console.log('Error: ' + (error.stack || error))
-          })
+          // 不属于当前操作任务的步骤，把当前操作任务添加到任务列表
+          task && taskList.push(task)
 
           // 新的操作任务
           id = newId
@@ -873,9 +894,9 @@ export default {
           }
         } else {
           // 属于当前操作任务的步骤
+          stepIndex = Number(step[3].split('.')[0]) - 1
           if (step[3].includes('.')) {
             // 子步骤
-            stepIndex = Number(step[3].split('.')[0]) - 1
             if (Array.isArray(task.steps[stepIndex])) {
               task.steps[stepIndex].push(step[4])
             } else {
@@ -883,12 +904,14 @@ export default {
             }
           } else {
             // 非子步骤
-            task.steps.push(step[4])
+            task.steps[stepIndex] = step[4]
           }
         }
       }
-      db.operatingOrder.add(task).catch(error => {
-        console.log('Error: ' + (error.stack || error))
+      // 把最后一个任务添加到任务列表
+      taskList.push(task)
+      await db.operatingOrder.bulkAdd(taskList).catch(() => {
+        this.$message.error('操作票导入失败，请重试')
       })
       this.isOperating = false
       this.$message.success('操作票导入成功')
