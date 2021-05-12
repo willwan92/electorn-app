@@ -118,6 +118,7 @@ export default {
       intervalList: [],
       deviceList: [],
       checkResult: [],
+      prevStep: '',
       checkProgress: 100
     }
   },
@@ -677,6 +678,17 @@ export default {
         step,
         stepNum
       })
+
+      // 验证步骤是否重复
+      if (step === this.prevStep) {
+        this.addCheckResult({
+          order,
+          step,
+          stepNum,
+          errorMsg: '通用规则：操作步骤重复'
+        })
+      }
+      this.prevStep = step
     },
     /**
      * 检查动词搭配
@@ -704,7 +716,7 @@ export default {
               order,
               step,
               stepNum,
-              errorMsg: '动词和设备不一致'
+              errorMsg: '通用规则：动词和设备不一致'
             })
           }
           break
@@ -715,7 +727,7 @@ export default {
           order,
           step,
           stepNum,
-          errorMsg: '动词和设备不一致'
+          errorMsg: '通用规则：动词和设备不一致'
         })
       }
     },
