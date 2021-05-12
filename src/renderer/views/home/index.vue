@@ -114,6 +114,8 @@ export default {
       specialSimpleRule: [],
       verbs: [],
       workplace: '',
+      taskName: '',
+      intervalList: [],
       deviceList: [],
       checkResult: [],
       checkProgress: 100
@@ -634,7 +636,7 @@ export default {
         // 非子步骤
         step = order.steps[stepIndex]
         stepNum = `${stepIndex + 1}`
-        await this.validateDevice({
+        await this.checkDevice({
           order,
           step,
           stepNum
@@ -653,7 +655,7 @@ export default {
         // 子步骤
         step = order.steps[stepIndex][subIndex]
         stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
-        await this.validateDevice({
+        await this.checkDevice({
           order,
           step,
           stepNum
@@ -717,33 +719,66 @@ export default {
         })
       }
     },
-    async validateDevice ({ order, stepNum, step }) {
-      // 某一步骤中出现了（kV） ，则此步骤必须包含对应在（工作地点）相应的库中的（双编）
+    /**
+     * 校验步骤中的双编设备
+     */
+    validateDevice (step, deviceList) {
+      let valid = false
+      let deviceName
+      // 遍历所有双编设备
+      if (!deviceList.length) return
+      for (let i = 0, len = deviceList.length; i < len; i++) {
+        deviceName = deviceList[i].deviceName
+        valid = step.includes(deviceName)
+        if (valid) break
+      }
+      return valid
+    },
+    /**
+     * 检查双编设备
+     */
+    async checkDevice ({ order, stepNum, step }) {
+      // 规则1：如果某一步骤中包含kV ，那么此步骤必须包含所属（工作地点）的（双编）
       if (!step.includes('kV')) return
       const workplace = order.workplace
       if (workplace !== this.workplace) {
+        this.workplace = workplace
         this.deviceList = await db.device
           .where('workplace')
           .equals(workplace)
           .toArray()
       }
-      let valid = false
-      let device
-      // 遍历所有双编设备
-      const deviceList = this.deviceList
-      if (!deviceList.length) return
-      for (let i = 0, len = deviceList.length; i < len; i++) {
-        device = deviceList[i]
-        valid = step.includes(device)
-        if (step.includes(device)) break
-      }
-      if (!valid) {
+      if (!this.validateDevice(step, this.deviceList)) {
         // 步骤中不包含该工作地点的任意双编设备，将该步骤添加检查结果中
         this.addCheckResult({
           order,
           stepNum,
           step,
           errorMsg: '通用规则：双编错误'
+        })
+      }
+
+      // 规则2：如果某一步骤中包含kV ，且操作任务中包含所属工作地点的某一个/几个间隔，那么此步骤必须包含上述间隔对应的（双编）
+      // 获取操作步骤的任务名
+      if (this.taskName !== order.taskName) {
+        this.taskName = order.taskName
+        // 过滤工作任务包含的间隔
+        this.intervalList = this.deviceList.filter(item => this.taskName.includes(item))
+      }
+      const intervalList = this.intervalList
+      if (!intervalList.length) return
+      // 遍历间隔
+      let valid = false
+      for (let i, len = intervalList.length; i < len; i++) {
+        valid = this.validateDevice(step, this.deviceList.filter(item => item.interval === intervalList[i]))
+        if (valid) break
+      }
+      if (!valid) {
+        this.addCheckResult({
+          order,
+          stepNum,
+          step,
+          errorMsg: '通用规则：双编间隔错误' 
         })
       }
     },
