@@ -56,3 +56,10 @@ export function formatTime (time, option) {
     return d.getMonth() + 1 + '月' + d.getDate() + '日' + d.getHours() + '时' + d.getMinutes() + '分'
   }
 }
+
+export function trimAllSpace(str) {
+  if (typeof str !== 'string') {
+    throw new Error('str is not a string')
+  }
+  return str.replace(/\s/g, '')
+}

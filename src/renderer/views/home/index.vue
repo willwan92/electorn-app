@@ -87,6 +87,7 @@ import fs from 'fs'
 import { remote } from 'electron'
 import db from '@/database/index'
 import { strUtils } from '@/utils/check'
+import { trimAllSpace } from '@/utils/index'
 
 export default {
   name: 'home',
@@ -249,21 +250,14 @@ export default {
       this.newCheckTime = this.$moment().format('yyyy-MM-DD HH:mm:ss')
       // 获取所有规则
       this.timeRule = await db.timeRule.get('gt')
-      this.checkProgress += 1
       this.nameRule = await db.nameRule.get('notIn')
-      this.checkProgress += 1
       this.simpleRule = await db.simpleRule.toArray()
-      this.checkProgress += 1
       this.complexRule = await db.complexRule.filter((rule) => rule.enable).toArray()
-      this.checkProgress += 1
       this.specialSimpleRule = await db.specialSimpleRule.filter(rule => rule.enable).toArray()
-      this.checkProgress += 1
       this.specialComplexRule = await db.specialComplexRule.filter(rule => rule.enable).toArray()
-      this.checkProgress += 1
       this.verbs = await db.verb.toArray()
-      this.checkProgress += 1
+      this.checkProgress = 5
       const operatingOrder = await db.operatingOrder.toArray()
-      console.log(operatingOrder.length)
       this.checkProgress = 10
       // 遍历所有操作票
       const total = operatingOrder.length
@@ -732,19 +726,19 @@ export default {
       }
     },
     /**
-     * 校验步骤中的双编设备
+     * 校验步骤中是否包含对应的双编设备
      */
     validateDevice (step, deviceList) {
-      let valid = false
+      let isIncluded = false
       let deviceName
       // 遍历所有双编设备
       if (!deviceList.length) return
       for (let i = 0, len = deviceList.length; i < len; i++) {
-        deviceName = deviceList[i].deviceName
-        valid = step.includes(deviceName)
-        if (valid) break
+        deviceName = trimAllSpace(deviceList[i].deviceName)
+        isIncluded = step.includes(deviceName)
+        if (isIncluded) break
       }
-      return valid
+      return isIncluded
     },
     /**
      * 检查双编设备
@@ -771,18 +765,26 @@ export default {
       }
 
       // 规则2：如果某一步骤中包含kV ，且操作任务中包含所属工作地点的某一个/几个间隔，那么此步骤必须包含上述间隔对应的（双编）
-      // 获取操作步骤的任务名
+      // 获取操作步骤的任务名和任务名包含的间隔
+      const interval
+      const intervalList = []
       if (this.taskName !== order.taskName) {
-        this.taskName = order.taskName
-        // 过滤工作任务包含的间隔
-        this.intervalList = this.deviceList.filter(item => this.taskName.includes(item))
+        const taskName = order.taskName
+        this.taskName = taskName
+        this.deviceList.forEach(item => {
+          interval = trimAllSpace(item.interval)
+          if (taskName.includes(interval) && !intervalList.includes(interval)) {
+            intervalList.push(interval)
+          }
+        })
       }
-      const intervalList = this.intervalList
+      this.intervalList = intervalList
+      // 遍历间隔，检查步骤中是否包含对应间隔的双编设备
       if (!intervalList.length) return
-      // 遍历间隔
       let valid = false
+      const deviceList = this.deviceList
       for (let i, len = intervalList.length; i < len; i++) {
-        valid = this.validateDevice(step, this.deviceList.filter(item => item.interval === intervalList[i]))
+        valid = this.validateDevice(step, deviceList.filter(item => item.interval === intervalList[i]))
         if (valid) break
       }
       if (!valid) {
@@ -933,7 +935,7 @@ export default {
           task = {
             id: id,
             num: step[0],
-            taskName: step[1],
+            taskName: trimAllSpace(step[1]),
             workplace: step[2],
             steps: [step[4]],
             startTime: step[5],
