@@ -57,7 +57,7 @@ export function formatTime (time, option) {
   }
 }
 
-export function trimAllSpace(str) {
+export function trimAllSpace (str) {
   if (typeof str !== 'string') {
     throw new Error('str is not a string')
   }

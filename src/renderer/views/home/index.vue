@@ -766,8 +766,8 @@ export default {
 
       // 规则2：如果某一步骤中包含kV ，且操作任务中包含所属工作地点的某一个/几个间隔，那么此步骤必须包含上述间隔对应的（双编）
       // 获取操作步骤的任务名和任务名包含的间隔
-      const interval
-      const intervalList = []
+      let interval
+      let intervalList = []
       if (this.taskName !== order.taskName) {
         const taskName = order.taskName
         this.taskName = taskName
@@ -792,7 +792,7 @@ export default {
           order,
           stepNum,
           step,
-          errorMsg: '通用规则：双编间隔错误' 
+          errorMsg: '通用规则：双编间隔错误'
         })
       }
     },
@@ -917,7 +917,7 @@ export default {
       localStorage.setItem('operatingOrderFile', file.path)
       const sheetsData = xlsx.parse(file.path)[0].data
       // 插入数据库
-      let id, task, stepIndex, step, newId
+      let id, task, stepNum, stepIndex, subIndex, step, newId
       let taskList = []
       // 遍历所有操作步骤
       for (let i = 1, len = sheetsData.length; i < len; i++) {
@@ -943,13 +943,16 @@ export default {
           }
         } else {
           // 属于当前操作任务的步骤
-          stepIndex = Number(step[3].split('.')[0]) - 1
-          if (step[3].includes('.')) {
+          stepNum = Number(step[3].split('.')[0])
+          stepIndex = stepNum[0]
+          if (stepNum[1]) {
             // 子步骤
+            subIndex = stepNum[1]
             if (Array.isArray(task.steps[stepIndex])) {
-              task.steps[stepIndex].push(step[4])
+              task.steps[stepIndex][subIndex] = step[4]
             } else {
-              task.steps[stepIndex] = [task.steps[stepIndex], step[4]]
+              task.steps[stepIndex] = [task.steps[stepIndex]]
+              task.steps[stepIndex][subIndex] = step[4]
             }
           } else {
             // 非子步骤
