@@ -191,7 +191,7 @@ export default {
         // 遍历表格中的设备
         workplace.data.forEach((device, index) => {
           // 从第五行开始
-          if (index > 3 && device.length > 1) {
+          if (index > 3 && device[1]) {
             if (device.length > 2) {
               // 新的间隔
               interval = device[2]

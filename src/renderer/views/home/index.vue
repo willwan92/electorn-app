@@ -241,6 +241,16 @@ export default {
         this.isLoading = false
       }
     },
+    async getDeviceList (order) {
+      const workplace = order.workplace
+      if (workplace !== this.workplace) {
+        this.deviceList = await db.device
+          .where('workplace')
+          .equals(workplace)
+          .toArray()
+        this.workplace = workplace
+      }
+    },
     async handleCheck () {
       this.isOperating = true
       this.operatingText = '正在检查...'
@@ -266,6 +276,7 @@ export default {
         this.checkTaskName(order)
         this.validateSpecialRule(order)
         this.validateSpecialComplexRule(order)
+        await this.getDeviceList(order)
         await this.checkSteps(order)
         this.checkProgress = Math.floor((index + 1) / total * 90) + 10
       })
@@ -310,6 +321,7 @@ export default {
      * @param keywords { String[] } 要校验的关键字
      */
     validateStr (step, operator, keywords) {
+      if (!step) return true
       let valid = false
       const isNotIn = operator === 'notIn'
       const validate = strUtils[operator]
@@ -631,7 +643,7 @@ export default {
         // 非子步骤
         step = order.steps[stepIndex]
         stepNum = `${stepIndex + 1}`
-        await this.checkDevice({
+        this.checkDevice({
           order,
           step,
           stepNum
@@ -650,7 +662,7 @@ export default {
         // 子步骤
         step = order.steps[stepIndex][subIndex]
         stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
-        await this.checkDevice({
+        this.checkDevice({
           order,
           step,
           stepNum
@@ -734,11 +746,12 @@ export default {
     validateDevice (step, deviceList) {
       let isIncluded = false
       let deviceName
+      let newStep = trimAllSpace(step)
       // 遍历所有双编设备
       if (!deviceList.length) return
       for (let i = 0, len = deviceList.length; i < len; i++) {
         deviceName = trimAllSpace(deviceList[i].deviceName)
-        isIncluded = step.includes(deviceName)
+        isIncluded = newStep.includes(deviceName)
         if (isIncluded) break
       }
       return isIncluded
@@ -746,17 +759,9 @@ export default {
     /**
      * 检查双编设备
      */
-    async checkDevice ({ order, stepNum, step }) {
+    checkDevice ({ order, stepNum, step }) {
       // 规则1：如果某一步骤中包含kV ，那么此步骤必须包含所属（工作地点）的（双编）
       if (!step.includes('kV')) return
-      const workplace = order.workplace
-      if (workplace !== this.workplace) {
-        this.workplace = workplace
-        this.deviceList = await db.device
-          .where('workplace')
-          .equals(workplace)
-          .toArray()
-      }
       if (!this.validateDevice(step, this.deviceList)) {
         // 步骤中不包含该工作地点的任意双编设备，将该步骤添加检查结果中
         this.addCheckResult({
@@ -785,9 +790,10 @@ export default {
       // 遍历间隔，检查步骤中是否包含对应间隔的双编设备
       if (!intervalList.length) return
       let valid = false
-      const deviceList = this.deviceList
-      for (let i, len = intervalList.length; i < len; i++) {
-        valid = this.validateDevice(step, deviceList.filter(item => item.interval === intervalList[i]))
+      let deviceList
+      for (let i = 0, len = intervalList.length; i < len; i++) {
+        deviceList = this.deviceList.filter(item => item.interval === intervalList[i])
+        valid = this.validateDevice(step, deviceList)
         if (valid) break
       }
       if (!valid) {
@@ -903,7 +909,7 @@ export default {
     checkTimeLength (order) {
       if (!this.timeRule) return
       const timeLength = (new Date(order.endTime) - new Date(order.startTime)) / 60000
-      if (timeLength <= this.timeRule.timeLength) {
+      if (timeLength < this.timeRule.timeLength) {
         this.addCheckResult({
           order,
           stepNum: '',
@@ -946,11 +952,11 @@ export default {
           }
         } else {
           // 属于当前操作任务的步骤
-          stepNum = Number(step[3].split('.')[0])
-          stepIndex = stepNum[0]
+          stepNum = step[3].split('.')
+          stepIndex = Number(stepNum[0]) - 1
           if (stepNum[1]) {
             // 子步骤
-            subIndex = stepNum[1]
+            subIndex = Number(stepNum[1])
             if (Array.isArray(task.steps[stepIndex])) {
               task.steps[stepIndex][subIndex] = step[4]
             } else {
