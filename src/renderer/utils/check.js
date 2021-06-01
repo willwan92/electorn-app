@@ -12,13 +12,16 @@ function escapeSpecialChar (str) {
 
 export const strUtils = {
   /**
-   * 判断字符串 str 中 是否包含目标字符串 target
-   * @param { String } str 字符串
+   * 判断 source 中是否包含目标字符串 target
+   * @param { String } source 字符串
    * @param { String } target 目标字符串
    * @returns Boolean
    */
-  in: function (string, target) {
-    const str = string.trim()
+  in: function (source, target) {
+    if (typeof source !== 'string') {
+      throw new Error('source is not a string')
+    }
+    const str = source.trim()
     if (!target.includes('...')) {
       return str['includes'](target)
     } else {
@@ -27,8 +30,11 @@ export const strUtils = {
       return reg.test(str)
     }
   },
-  notIn: function (string, target) {
-    const str = string.trim()
+  notIn: function (source, target) {
+    if (typeof source !== 'string') {
+      throw new Error('source is not a string')
+    }
+    const str = source.trim()
     if (!target.includes('...')) {
       return !str['includes'](target)
     } else {
@@ -37,12 +43,18 @@ export const strUtils = {
       return !reg.test(str)
     }
   },
-  equal: function (string, target) {
-    const str = string.trim()
+  equal: function (source, target) {
+    if (typeof source !== 'string') {
+      throw new Error('source is not a string')
+    }
+    const str = source.trim()
     return str === target
   },
-  startsWith: function (string, target) {
-    const str = string.trim()
+  startsWith: function (source, target) {
+    if (typeof source !== 'string') {
+      throw new Error('source is not a string')
+    }
+    const str = source.trim()
     if (!target.includes('...')) {
       return _.startsWith(str, target)
     } else {
@@ -51,8 +63,11 @@ export const strUtils = {
       return reg.test(str)
     }
   },
-  endsWith: function (string, target) {
-    const str = string.trim()
+  endsWith: function (source, target) {
+    if (typeof source !== 'string') {
+      throw new Error('source is not a string')
+    }
+    const str = source.trim()
     if (!target.includes('...')) {
       return _.endsWith(str, target)
     } else {
