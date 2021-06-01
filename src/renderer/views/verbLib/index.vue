@@ -75,6 +75,7 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
+import { trimAllSpace } from '@/utils/index'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -153,7 +154,10 @@ export default {
         this.currentPage -= 1
         this.fetchTableData()
       } else {
-        this.tableData = data
+        this.tableData = data.map(item => {
+          item.nouns = item.nouns.join('、')
+          return item
+        })
         this.isLoading = false
       }
     },
@@ -168,22 +172,28 @@ export default {
         })
 
       const verbSheets = xlsx.parse(file.path)
-      // // 插入数据库
-      const promises = verbSheets[0].data.map((item, index) => {
-        if (index > 2 && item.length > 2) {
-          return db.verb.add({
+      let nouns
+      let errVerbs = []
+      // 插入数据库
+      const promises = verbSheets[0].data.map(async (item, index) => {
+        if (index > 2 && item[1]) {
+          nouns = item[2] && trimAllSpace(item[2])
+          await db.verb.add({
             verb: item[1],
-            nouns: item[2]
+            nouns: nouns ? nouns.split('、') : []
+          }).catch(() => {
+            errVerbs.push(item[1])
           })
         }
       })
 
       Promise.all(promises).then(() => {
-        this.$message.success('动词库导入成功')
-        this.fetchTableData()
-      }).catch(error => {
-        console.log(error)
-        this.$message.error('错误：请检查动词是否重复，重复的动词请合并成 1 条数据')
+        if (errVerbs.length) {
+          this.$message.error(`错误：${errVerbs.join('、')}等动词重复，重复的动词请合并成 1 条数据`)
+        } else {
+          this.$message.success('动词库导入成功')
+          this.fetchTableData()
+        }
       })
       // 返回 false, 自行处理excel数据
       return false

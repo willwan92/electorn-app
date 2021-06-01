@@ -736,7 +736,7 @@ export default {
           order,
           step,
           stepNum,
-          errorMsg: '通用规则：动词和设备不一致'
+          errorMsg: '通用规则：动词错误'
         })
       }
     },

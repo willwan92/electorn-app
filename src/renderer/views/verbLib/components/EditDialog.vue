@@ -80,7 +80,7 @@ export default {
           db.verb
             .add({
               verb: verb,
-              nouns: nouns.join('、')
+              nouns: nouns
             })
             .then(() => {
               this.dialogFormVisible = false
@@ -88,7 +88,8 @@ export default {
               this.$emit('ok')
             })
             .catch(err => {
-              this.$message.error(`錯誤：${err.message || err}`)
+              console.log(err)
+              this.$message.error(`錯誤：动词不能重复，动词${verb}已存在`)
             })
             .finally(() => {
               this.isSubmiting = false
@@ -97,7 +98,7 @@ export default {
           db.verb
             .update(id, {
               verb: verb,
-              nouns: nouns.join('、')
+              nouns: nouns
             })
             .then(() => {
               this.dialogFormVisible = false
@@ -105,7 +106,8 @@ export default {
               this.$emit('ok')
             })
             .catch(err => {
-              this.$message.error(`錯誤：${err.message || err}`)
+              console.log(err)
+              this.$message.error(`錯誤：系统繁忙，请稍后再试`)
             })
             .finally(() => {
               this.isSubmiting = false
