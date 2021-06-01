@@ -169,19 +169,22 @@ export default {
 
       const verbSheets = xlsx.parse(file.path)
       // // 插入数据库
-      verbSheets[0].data.forEach((item, index) => {
+      const promises = verbSheets[0].data.map((item, index) => {
         if (index > 2 && item.length > 2) {
-          db.verb.add({
+          return db.verb.add({
             verb: item[1],
             nouns: item[2]
-          }).catch(error => {
-            this.$message.error('Error: ' + (error.stack || error))
           })
         }
       })
 
-      this.$message.success('动词库导入成功')
-      this.fetchTableData()
+      Promise.all(promises).then(() => {
+        this.$message.success('动词库导入成功')
+        this.fetchTableData()
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('错误：请检查动词是否重复，重复的动词请合并成 1 条数据')
+      })
       // 返回 false, 自行处理excel数据
       return false
     }

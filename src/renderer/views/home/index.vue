@@ -255,7 +255,7 @@ export default {
       this.complexRule = await db.complexRule.filter((rule) => rule.enable).toArray()
       this.specialSimpleRule = await db.specialSimpleRule.filter(rule => rule.enable).toArray()
       this.specialComplexRule = await db.specialComplexRule.filter(rule => rule.enable).toArray()
-      this.verbs = await db.verb.toArray()
+      this.verbs = Object.freeze(await db.verb.toArray())
       this.checkProgress = 5
       const operatingOrder = await db.operatingOrder.toArray()
       this.checkProgress = 10
@@ -701,17 +701,20 @@ export default {
         verbValid = startsWith(step, verb.verb)
         if (verbValid) {
           nouns = verb.nouns
-          for (let i = 0, len = nouns.length; i < len; i++) {
-            nounValid = includes(step, nouns[i])
-            if (nounValid) break
-          }
-          if (!nounValid) {
-            this.addCheckResult({
-              order,
-              step,
-              stepNum,
-              errorMsg: '通用规则：动词和设备不一致'
-            })
+          // 如果有对应搭配
+          if (nouns.length) {
+            for (let i = 0, len = nouns.length; i < len; i++) {
+              nounValid = includes(step, nouns[i])
+              if (nounValid) break
+            }
+            if (!nounValid) {
+              this.addCheckResult({
+                order,
+                step,
+                stepNum,
+                errorMsg: '通用规则：动词和设备不一致'
+              })
+            }
           }
           break
         }

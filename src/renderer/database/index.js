@@ -2,9 +2,9 @@ import Dexie from 'dexie'
 
 const db = new Dexie('MainDatabase')
 
-db.version(6).stores({
+db.version(7).stores({
   device: '++id, workplace, deviceName, interval',
-  verb: '++id, verb, nouns',
+  verb: '++id, &verb, nouns',
   timeRule: 'operator, timeLength',
   nameRule: 'operator, keywords',
   simpleRule: '++id, name, enable, step, operator, keywords, errorMsg',
