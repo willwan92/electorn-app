@@ -9,18 +9,13 @@
         }]">
         <el-input v-model="form.verb" autocomplete="off"></el-input>
       </el-form-item>
-      <el-form-item
-         v-for="(item, index) in form.nouns"
-        :key="index"
-        :label="index === 0 ? '对应搭配' : ''"
-        :class="index === form.nouns.length - 1 ? 'last-noun' : 'noun'"
-        :prop="`nouns.${index}`"
-        :rules="[{
-          required: true, message: '请输入动词搭配', trigger: 'blur'
-        }]">
-        <el-input v-model="form.nouns[index]" autocomplete="off"  placeholder="请输入动词搭配，搭配之间是或的关系"></el-input>
-        <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
-        <el-button v-else icon="el-icon-minus" @click="handleRemoveClick(index)" type="danger" circle></el-button>
+      <el-form-item label="对应搭配">
+        <el-input
+          type="textarea"
+          :rows="2"
+          v-model="form.nouns"
+          autocomplete="off"
+          placeholder="请输入动词搭配，多个搭配用顿号“、”隔开"></el-input>
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
@@ -32,6 +27,7 @@
 
 <script>
 import db from '@/database/index'
+import { trimAllSpace } from '@/utils/index'
 export default {
   name: 'EditDialog',
   data () {
@@ -40,7 +36,7 @@ export default {
       isSubmiting: false,
       form: {
         verb: '',
-        nouns: ['']
+        nouns: ''
       }
     }
   },
@@ -53,21 +49,15 @@ export default {
       if (!row) {
         this.form = {
           verb: '',
-          nouns: ['']
+          nouns: ''
         }
       } else {
         this.form = {
           id: row.id,
           verb: row.verb,
-          nouns: row.nouns.split('、')
+          nouns: row.nouns
         }
       }
-    },
-    handleAddClick () {
-      this.form.nouns.push('')
-    },
-    handleRemoveClick (index) {
-      this.form.nouns.splice(index, 1)
     },
     handleSubmit () {
       // 防止重复提交
@@ -75,7 +65,10 @@ export default {
       this.$refs.form.validate(valid => {
         if (!valid) return
         this.isSubmiting = true
-        const { verb, nouns, id } = this.form
+        const id = this.form.id
+        const verb = trimAllSpace(this.form.verb)
+        let nouns = trimAllSpace(this.form.nouns)
+        nouns = nouns ? nouns.split('、') : []
         if (!id) {
           db.verb
             .add({
@@ -122,7 +115,7 @@ export default {
 <style lang="scss" scoped>
 .dialog {
   width: 400px;
-  .el-input, .el-select {
+  .el-input, .el-select, .el-textarea {
     width: 300px;
   }
 }
