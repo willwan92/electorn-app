@@ -82,6 +82,7 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
+import { trimAllSpace } from '@/utils/index'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -185,13 +186,15 @@ export default {
       await db.device.clear()
       const deviceSheets = xlsx.parse(file.path)
       let interval = ''
+      let deviceName
       let data = []
       // 遍历不同工作地点表格，格式化双编设备数据
       const workplaceList = deviceSheets.map(workplace => {
         // 遍历表格中的设备
         workplace.data.forEach((device, index) => {
           // 从第五行开始
-          if (index > 3 && device[1]) {
+          deviceName = trimAllSpace(device[1])
+          if (index > 3 && device) {
             if (device.length > 2) {
               // 新的间隔
               interval = device[2]
@@ -199,7 +202,7 @@ export default {
             data.push({
               interval,
               workplace: workplace.name,
-              deviceName: device[1]
+              deviceName: deviceName
             })
           }
         })
