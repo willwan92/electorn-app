@@ -28,6 +28,9 @@
           <el-input v-model="form.keywords[index].errorMsg" placeholder="请输入报错信息"></el-input>
         </el-form-item>
         <el-form-item>
+          <el-checkbox v-model="form.keywords[index].ignore">忽略括号中内容</el-checkbox>
+        </el-form-item>
+        <el-form-item>
           <el-button v-if="index === 0" icon="el-icon-plus" @click="handleAddClick" circle></el-button>
           <el-button v-else icon="el-icon-minus" @click="handleRemoveClick(index)" type="danger" circle></el-button>
         </el-form-item>
@@ -49,7 +52,8 @@ export default {
         operator: 'notIn',
         keywords: [{
           keyword: '',
-          errorMsg: '任务名称错误'
+          errorMsg: '任务名称错误',
+          ignore: false
         }]
       }
     }
@@ -67,7 +71,8 @@ export default {
     handleAddClick () {
       this.form.keywords.push({
         keyword: '',
-        errorMsg: '任务名称错误'
+        errorMsg: '任务名称错误',
+        ignore: false
       })
     },
     handleRemoveClick (index) {
@@ -93,7 +98,7 @@ export default {
 
 <style lang="scss" scoped>
 .page-form {
-  width: 600px;
+  width: 710px;
   .el-select {
     width: 200px;
   }

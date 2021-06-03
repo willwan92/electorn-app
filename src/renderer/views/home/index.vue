@@ -897,8 +897,12 @@ export default {
     checkTaskName (order) {
       if (!this.nameRule) return
       const keywords = this.nameRule.keywords
+      let taskName = order.taskName
       for (let i = 0, len = keywords.length; i < len; i++) {
-        if (order.taskName.includes(keywords[i].keyword)) {
+        if (keywords[i].ignore) {
+          taskName = taskName.replace(/[(（].*[）)]/, '')
+        }
+        if (taskName.includes(keywords[i].keyword)) {
           this.addCheckResult({
             order,
             errorMsg: `通用规则：${keywords[i].errorMsg}`
