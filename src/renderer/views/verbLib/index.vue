@@ -171,30 +171,42 @@ export default {
           }
         })
 
-      const verbSheets = xlsx.parse(file.path)
+      const verbData = xlsx.parse(file.path)[0].data
       let nouns
       let errVerbs = []
-      // 插入数据库
-      const promises = verbSheets[0].data.map(async (item, index) => {
-        if (index > 2 && item[1]) {
-          nouns = item[2] && trimAllSpace(item[2])
-          await db.verb.add({
-            verb: item[1],
-            nouns: nouns ? nouns.split('、') : []
-          }).catch(() => {
-            errVerbs.push(item[1])
-          })
-        }
-      })
-
-      Promise.all(promises).then(() => {
-        if (errVerbs.length) {
-          this.$message.error(`错误：${errVerbs.join('、')}等动词重复，重复的动词请合并成 1 条数据`)
+      let verbs = []
+      let data = []
+      let item
+      for (let i = 1, len = verbData.length; i < len; i++) {
+        item = verbData[i]
+        if (typeof item[0] === 'string') {
+          if (verbs.includes(item[0])) {
+            errVerbs.push(item[0])
+          } else {
+            nouns = item[1] && trimAllSpace(item[1])
+            data.push({
+              verb: item[0],
+              nouns: nouns ? nouns.split('、') : []
+            })
+          }
         } else {
-          this.$message.success('动词库导入成功')
-          this.fetchTableData()
+          this.$message.error('错误：动词库格式错误，动词只能为汉字，请检查动词库')
+          return false
         }
-      })
+      }
+      // 插入数据库
+      if (errVerbs.length) {
+        this.$message.error(`错误：${errVerbs.join('、')}等动词重复，重复的动词请合并成 1 条数据`)
+      } else {
+        db.verb.bulkAdd(data)
+          .then(() => {
+            this.$message.success('动词库导入成功')
+            this.fetchTableData()
+          })
+          .catch(err => {
+            this.$message.error(err)
+          })
+      }
       // 返回 false, 自行处理excel数据
       return false
     }
