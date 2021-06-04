@@ -267,7 +267,7 @@ export default {
       this.specialComplexRule = await db.specialComplexRule.filter(rule => rule.enable).toArray()
       this.verbs = Object.freeze(await db.verb.toArray())
       this.checkProgress = 5
-      const operatingOrder = await db.operatingOrder.toArray()
+      const operatingOrder = Object.freeze(await db.operatingOrder.toArray())
       this.checkProgress = 10
       // 遍历所有操作票
       const total = operatingOrder.length
@@ -347,7 +347,7 @@ export default {
       let step
       if (condition.position === 'current') {
         // 检查当前步骤的
-        step = subIndex === undefined ? order.steps[stepIndex] : order.steps[stepIndex][subIndex]
+        step = subIndex === undefined ? order.steps[stepIndex].step : order.steps[stepIndex][subIndex].step
         isMatched = this.validateStr(step, condition.operator, condition.keywords)
       } else if (condition.position === 'before') {
         // 检查当前步骤之前步骤的
@@ -360,7 +360,7 @@ export default {
             // 防止用户指定的超出
             min = min < 0 ? 0 : min
             for (let i = stepIndex - 1; i >= min; i--) {
-              targetStep = order.steps[i]
+              targetStep = order.steps[i].step
               // 如果是包含子步骤的步骤，跳过
               if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
@@ -373,7 +373,7 @@ export default {
             // 防止用户指定的超出
             min = min < 0 ? 0 : min
             for (let i = subIndex - 1; i >= min; i--) {
-              targetStep = order.steps[stepIndex][i]
+              targetStep = order.steps[stepIndex][i].step
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
@@ -384,7 +384,7 @@ export default {
           if (condition.stepType === 'notChild') {
             // 遍历指定的步骤
             for (let i = stepIndex - 1; i >= 0; i--) {
-              targetStep = order.steps[i]
+              targetStep = order.steps[i].step
               if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
@@ -393,7 +393,7 @@ export default {
           } else if (condition.stepType === 'child' && subIndex) {
             // 遍历指定的步骤
             for (let i = subIndex - 1; i >= 0; i--) {
-              targetStep = order.steps[stepIndex][i]
+              targetStep = order.steps[stepIndex][i].step
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
@@ -412,7 +412,7 @@ export default {
             max = max > length ? length : max
             // 遍历指定的步骤
             for (let i = stepIndex + 1; i < max; i++) {
-              targetStep = order.steps[i]
+              targetStep = order.steps[i].step
               if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
@@ -426,7 +426,7 @@ export default {
             max = max > length ? length : max
             // 遍历指定的步骤
             for (let i = subIndex + 1; i < max; i++) {
-              targetStep = order.steps[stepIndex][i]
+              targetStep = order.steps[stepIndex][i].step
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
@@ -437,7 +437,7 @@ export default {
           if (condition.stepType === 'notChild') {
             // 遍历指定的步骤
             for (let i = stepIndex + 1, max = order.steps.length; i < max; i++) {
-              targetStep = order.steps[i]
+              targetStep = order.steps[i].step
               if (Array.isArray(targetStep)) continue
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
@@ -446,7 +446,7 @@ export default {
           } else if (condition.stepType === 'child' && subIndex) {
             // 遍历指定的步骤
             for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < max; i++) {
-              targetStep = order.steps[stepIndex][i]
+              targetStep = order.steps[stepIndex][i].step
               isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
@@ -473,11 +473,11 @@ export default {
         // 记录符合第一个条件的步骤号
         if (cIndex === 0) {
           if (subIndex === undefined) {
-            step = order.steps[stepIndex]
-            stepNum = `${stepIndex + 1}`
+            step = order.steps[stepIndex].step
+            stepNum = order.steps[stepIndex].stepNum
           } else {
-            step = order.steps[stepIndex][subIndex]
-            stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
+            step = order.steps[stepIndex][subIndex].step
+            stepNum = order.steps[stepIndex][subIndex].stepNum
           }
         }
       }
@@ -575,7 +575,7 @@ export default {
           let valid = false
           // 遍历操作票所有步骤
           for (let idx = 0, len = steps.length; idx < len; idx++) {
-            step = steps[idx]
+            step = steps[idx].step
             stepTmp = step
             if (!Array.isArray(step)) {
               // 非子步骤
@@ -586,7 +586,7 @@ export default {
               } else {
                 // 如果校验逻辑不是包含，需要遍历所有步骤
                 if (!valid) {
-                  stepNum = `${idx + 1}`
+                  stepNum = steps[idx].stepNum
                   this.addCheckResult({
                     order,
                     stepNum,
@@ -601,7 +601,7 @@ export default {
               let subStep
               for (let subIdx = 0, len = step.length; subIdx < len; subIdx++) {
                 // 子步骤
-                subStep = step[subIdx]
+                subStep = step[subIdx].step
                 stepTmp = subStep
                 valid = this.validateStr(subStep, operator, keywords)
                 if (isIn) {
@@ -610,7 +610,7 @@ export default {
                 } else {
                   // 如果校验逻辑不是包含，需要遍历所有步骤
                   if (!valid) {
-                    stepNum = subIdx > 0 ? `${idx + 1}.${subIdx}` : `${idx + 1}`
+                    stepNum = step[subIdx].stepNum
                     this.addCheckResult({
                       order,
                       stepNum,
@@ -641,8 +641,8 @@ export default {
       let stepNum
       if (subIndex === undefined) {
         // 非子步骤
-        step = order.steps[stepIndex]
-        stepNum = `${stepIndex + 1}`
+        step = order.steps[stepIndex].step
+        stepNum = order.steps[stepIndex].stepNum
         this.checkDevice({
           order,
           step,
@@ -660,8 +660,8 @@ export default {
         })
       } else {
         // 子步骤
-        step = order.steps[stepIndex][subIndex]
-        stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
+        step = order.steps[stepIndex][subIndex].step
+        stepNum = order.steps[stepIndex][subIndex].stepNum
         this.checkDevice({
           order,
           step,
@@ -810,29 +810,28 @@ export default {
         if (!Array.isArray(step)) {
           // 统计步骤数
           this.newStepAmount += 1
-          let stepNum = `${stepIndex + 1}`
           if (stepIndex === 0) {
             // 第一步
             this.validateRule({
               order,
-              step,
-              stepNum,
+              step: step.step,
+              stepNum: step.stepNum,
               stepType: 'first'
             })
           } else if (stepIndex === (order.steps.length - 1)) {
             // 最后一步
             this.validateRule({
               order,
-              step,
-              stepNum,
+              step: step.step,
+              stepNum: step.stepNum,
               stepType: 'last'
             })
           } else {
             // 其他步骤
             this.validateRule({
               order,
-              step,
-              stepNum,
+              step: step.step,
+              stepNum: step.stepNum,
               stepType: 'other'
             })
           }
@@ -844,29 +843,28 @@ export default {
         } else {
           // 包含子步骤的步骤
           step.forEach(async (subStep, subIndex) => {
-            let stepNum = subIndex > 0 ? `${stepIndex + 1}.${subIndex}` : `${stepIndex + 1}`
             if (subIndex === 0) {
               // 母步骤
               this.validateRule({
                 order,
-                stepNum,
-                step: subStep,
+                step: subStep.step,
+                stepNum: subStep.stepNum,
                 stepType: 'sub-first'
               })
             } else if (stepIndex === (order.steps.length - 1) && subIndex === (step.length - 1)) {
               // 最后一步
               this.validateRule({
                 order,
-                stepNum,
-                step: subStep,
+                step: subStep.step,
+                stepNum: subStep.stepNum,
                 stepType: 'last'
               })
             } else {
               // 其他步骤
               this.validateRule({
                 order,
-                stepNum,
-                step: subStep,
+                step: subStep.step,
+                stepNum: subStep.stepNum,
                 stepType: 'other'
               })
             }
@@ -930,7 +928,7 @@ export default {
       localStorage.setItem('operatingOrderFile', file.path)
       const sheetsData = xlsx.parse(file.path)[0].data
       // 插入数据库
-      let id, task, stepNum, stepIndex, subIndex, step, newId
+      let id, task, stepIndex, step, newId
       let taskList = []
       // 遍历所有操作步骤
       for (let i = 1, len = sheetsData.length; i < len; i++) {
@@ -950,33 +948,29 @@ export default {
             num: step[0],
             taskName: trimAllSpace(step[1]),
             workplace: step[2],
-            steps: [step[4]],
+            steps: [{ stepNum: step[3], step: step[4] }],
             startTime: step[5],
             endTime: step[6],
           }
         } else {
           // 属于当前操作任务的步骤
-          stepNum = step[3].split('.')
-          stepIndex = Number(stepNum[0]) - 1
-          if (stepNum[1]) {
+          if (step[3].includes('.')) {
             // 子步骤
-            subIndex = Number(stepNum[1])
-            if (Array.isArray(task.steps[stepIndex])) {
-              task.steps[stepIndex][subIndex] = step[4]
-            } else {
+            stepIndex = task.steps.length - 1
+            if (!Array.isArray(task.steps[stepIndex])) {
               task.steps[stepIndex] = [task.steps[stepIndex]]
-              task.steps[stepIndex][subIndex] = step[4]
             }
+            task.steps[stepIndex].push({ stepNum: step[3], step: step[4] })
           } else {
             // 非子步骤
-            task.steps[stepIndex] = step[4]
+            task.steps.push({ stepNum: step[3], step: step[4] })
           }
         }
       }
       // 把最后一个任务添加到任务列表
       taskList.push(task)
       await db.operatingOrder.bulkAdd(taskList).catch(() => {
-        this.$message.error('操作票导入失败，请重试')
+        this.$message.error('操作票导入失败，请稍后再试')
       })
       this.isOperating = false
       this.$message.success('操作票导入成功')
