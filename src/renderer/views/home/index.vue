@@ -348,7 +348,11 @@ export default {
       if (condition.position === 'current') {
         // 检查当前步骤的
         step = subIndex === undefined ? order.steps[stepIndex].step : order.steps[stepIndex][subIndex].step
-        isMatched = this.validateStr(step, condition.operator, condition.keywords)
+        if (condition.operator === 'equalToTaskName') {
+          isMatched = order.taskName === trimAllSpace(step)
+        } else {
+          isMatched = this.validateStr(step, condition.operator, condition.keywords)
+        }
       } else if (condition.position === 'before') {
         // 检查当前步骤之前步骤的
         let len = Number(condition.positionNum)
@@ -363,7 +367,11 @@ export default {
               targetStep = order.steps[i].step
               // 如果是包含子步骤的步骤，跳过
               if (Array.isArray(targetStep)) continue
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -374,7 +382,11 @@ export default {
             min = min < 0 ? 0 : min
             for (let i = subIndex - 1; i >= min; i--) {
               targetStep = order.steps[stepIndex][i].step
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -386,7 +398,11 @@ export default {
             for (let i = stepIndex - 1; i >= 0; i--) {
               targetStep = order.steps[i].step
               if (Array.isArray(targetStep)) continue
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -394,7 +410,11 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex - 1; i >= 0; i--) {
               targetStep = order.steps[stepIndex][i].step
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -414,7 +434,11 @@ export default {
             for (let i = stepIndex + 1; i < max; i++) {
               targetStep = order.steps[i].step
               if (Array.isArray(targetStep)) continue
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -427,7 +451,11 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex + 1; i < max; i++) {
               targetStep = order.steps[stepIndex][i].step
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -439,7 +467,11 @@ export default {
             for (let i = stepIndex + 1, max = order.steps.length; i < max; i++) {
               targetStep = order.steps[i].step
               if (Array.isArray(targetStep)) continue
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }
@@ -447,7 +479,11 @@ export default {
             // 遍历指定的步骤
             for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < max; i++) {
               targetStep = order.steps[stepIndex][i].step
-              isMatched = this.validateStr(targetStep, condition.operator, condition.keywords)
+              if (condition.operator === 'equalToTaskName') {
+                isMatched = order.taskName === trimAllSpace(step)
+              } else {
+                isMatched = this.validateStr(step, condition.operator, condition.keywords)
+              }
               // 如果步骤中有一个符合条件，终止循环
               if (isMatched) break
             }

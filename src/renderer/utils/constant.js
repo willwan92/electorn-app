@@ -5,9 +5,9 @@ const positionOptions = {
 }
 
 const condPosOptions = {
-  current: '且在此步骤中',
-  before: '且在此步骤之前',
-  after: '且在此步骤之后'
+  current: '且此步骤',
+  before: '且此步骤之前',
+  after: '且此步骤之后'
 }
 
 const stepOptions = {
@@ -49,6 +49,11 @@ const operatorOptions = [
     label: '要等于',
     filterLabel: '等于',
     value: 'equal'
+  },
+  {
+    label: '不等于任务名称',
+    filterLabel: '不等于任务名称',
+    value: 'equalToTaskName'
   },
   {
     label: '要以关键字开头',
