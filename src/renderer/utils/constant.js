@@ -23,6 +23,7 @@ const condOperatorOptions = {
   notIn: '不包含',
   equal: '等于',
   startsWith: '以关键字开头',
+  equalToTaskName: '不等于任务名称',
   endsWith: '以关键字结尾'
 }
 
