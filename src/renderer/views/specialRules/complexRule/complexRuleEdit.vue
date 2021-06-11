@@ -108,18 +108,20 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <span v-for="(item, kwIndex) in condition.keywords" class="keyword-wrapper" :key="kwIndex">
-        <el-form-item
-          :prop="`conditions.${index}.keywords.${kwIndex}`"
-          :rules="[{
-            required: true, message: '请输入关键字', trigger: 'blur'
-          }]">
-          <span v-if="kwIndex !== 0">或</span>
-          <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
-        </el-form-item>
-        <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.conditions[index].keywords)" circle></el-button>
-        <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.conditions[index].keywords, kwIndex)" type="danger" circle></el-button>
-      </span>
+      <template v-if="condition.operator !== 'equalToTaskName'">
+        <span v-for="(item, kwIndex) in condition.keywords" class="keyword-wrapper" :key="kwIndex">
+          <el-form-item
+            :prop="`conditions.${index}.keywords.${kwIndex}`"
+            :rules="[{
+              required: true, message: '请输入关键字', trigger: 'blur'
+            }]">
+            <span v-if="kwIndex !== 0">或</span>
+            <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
+          </el-form-item>
+          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.conditions[index].keywords)" circle></el-button>
+          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.conditions[index].keywords, kwIndex)" type="danger" circle></el-button>
+        </span>
+      </template>
     </div>
     <!-- 校验步骤 -->
     <div>
