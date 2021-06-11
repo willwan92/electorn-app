@@ -177,7 +177,7 @@ export default {
           { wch: 50 }
         ]
       }
-      const sheetBuffer = xlsx.build([{name: `操作票检查结果-${this.checkTime}`, data: sheetData, options: options}])
+      const sheetBuffer = xlsx.build([{name: 'Sheet1', data: sheetData, options: options}])
       const desktop = remote.app.getPath('desktop')
       const checkTime = this.$moment(this.checkTime).format('yyyyMMDDHHmmss')
       this.saveFile({
