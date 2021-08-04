@@ -82,7 +82,6 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
-import { trimAllSpace } from '@/utils/index'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -190,24 +189,40 @@ export default {
       let data = []
       // 遍历不同工作地点表格，格式化双编设备数据
       const workplaceList = deviceSheets.map(workplace => {
+        console.log(workplace)
         // 遍历表格中的设备
         workplace.data.forEach((device, index) => {
           // 从第五行开始
-          deviceName = trimAllSpace(device[1])
           if (index > 3 && device) {
             if (device.length > 2) {
               // 新的间隔
               interval = device[2]
             }
-            data.push({
-              interval,
-              workplace: workplace.name,
-              deviceName: deviceName
-            })
+            // 一次设备
+            if (device[1]) {
+              deviceName = device[1].trim()
+              deviceName && data.push({
+                interval,
+                workplace: workplace.name,
+                deviceName: deviceName,
+                deviceType: '1次设备'
+              })
+            }
+            // 二次设备
+            if (device[3]) {
+              deviceName = device[3].trim()
+              deviceName && data.push({
+                interval,
+                workplace: workplace.name,
+                deviceName: deviceName,
+                deviceType: '2次设备'
+              })
+            }
           }
         })
         return workplace.name
       })
+      console.log(workplaceList)
       localStorage.setItem('workplaceList', JSON.stringify(workplaceList))
       this.getWorkplaceList()
       // 插入数据库
@@ -220,7 +235,7 @@ export default {
       this.isUploading = false
       this.$message.success('设备双编库导入成功')
       this.fetchTableData()
-      // 返回 false, 自行处理excel数据
+      // 自行处理excel数据，所以返回 false
       return false
     }
   }

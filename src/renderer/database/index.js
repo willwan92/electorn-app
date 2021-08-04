@@ -3,7 +3,7 @@ import Dexie from 'dexie'
 const db = new Dexie('MainDatabase')
 
 db.version(7).stores({
-  device: '++id, workplace, deviceName, interval',
+  device: '++id, workplace, deviceName, deviceType, interval',
   verb: '++id, &verb, nouns',
   timeRule: 'operator, timeLength',
   nameRule: 'operator, keywords',
