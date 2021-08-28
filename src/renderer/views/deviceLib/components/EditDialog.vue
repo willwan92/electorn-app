@@ -1,11 +1,17 @@
 <template>
-  <el-dialog custom-class="dialog" width="600px" :title="form.id ? '编辑双编设备' : '新建双编设备'" :visible.sync="dialogFormVisible">
+  <el-dialog
+    custom-class="dialog"
+    width="600px"
+    :title="form.id ? '编辑双编设备' : '新建双编设备'"
+    :visible.sync="dialogFormVisible"
+  >
     <el-form ref="form" :model="form" :rules="rules" label-width="150px">
       <el-form-item label="工作地点" prop="workplace">
         <el-select
           v-model="form.workplace"
           filterable
-          placeholder="请选择工作地点">
+          placeholder="请选择工作地点"
+        >
           <el-option
             v-for="item in workplaceList"
             :label="item"
@@ -16,6 +22,12 @@
       </el-form-item>
       <el-form-item label="设备标识牌名称" prop="deviceName">
         <el-input v-model="form.deviceName" autocomplete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="设备类型" prop="deviceType">
+        <el-radio-group v-model="form.deviceType">
+          <el-radio label="1次设备">1次设备</el-radio>
+          <el-radio label="2次设备">2次设备</el-radio>
+        </el-radio-group>
       </el-form-item>
       <el-form-item label="间隔" prop="interval">
         <el-input v-model="form.interval" autocomplete="off"></el-input>
@@ -38,20 +50,19 @@ export default {
       workplaceList: [],
       form: {
         deviceName: '',
+        deviceType: '1次设备',
         workplace: '',
-        interval: ''
+        interval: '',
       },
       rules: {
         deviceName: [
-          { required: true, message: '请输入设备标识牌名称', trigger: 'blur' }
+          { required: true, message: '请输入设备标识牌名称', trigger: 'blur' },
         ],
         workplace: [
-          { required: true, message: '请选择工作地点', trigger: 'blur' }
+          { required: true, message: '请选择工作地点', trigger: 'blur' },
         ],
-        interval: [
-          { required: true, message: '请输入间隔', trigger: 'blur' }
-        ]
-      }
+        interval: [{ required: true, message: '请输入间隔', trigger: 'blur' }],
+      },
     }
   },
   methods: {
@@ -66,14 +77,16 @@ export default {
       if (!row) {
         this.form = {
           deviceName: '',
-          workplace: ''
+          deviceType: '1次设备',
+          workplace: '',
+          interval: '',
         }
       } else {
         this.form = row
       }
     },
     handleSubmit () {
-      this.$refs.form.validate(valid => {
+      this.$refs.form.validate((valid) => {
         if (!valid) return
         const form = this.form
         if (!form.id) {
@@ -83,7 +96,7 @@ export default {
               this.$message.success('添加成功')
               this.$emit('ok')
             })
-            .catch(err => {
+            .catch((err) => {
               console.log(err)
               this.$message.error(`錯誤：${err.message || err}`)
             })
@@ -98,7 +111,7 @@ export default {
               this.$message.success('修改成功')
               this.$emit('ok')
             })
-            .catch(err => {
+            .catch((err) => {
               console.log(err)
               this.$message.error(`錯誤：${err.message || err}`)
             })
@@ -115,7 +128,8 @@ export default {
 <style lang="scss" scoped>
 .dialog {
   width: 400px;
-  .el-input, .el-select {
+  .el-input,
+  .el-select {
     width: 300px;
   }
 }

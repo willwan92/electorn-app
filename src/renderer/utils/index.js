@@ -1,6 +1,4 @@
-/**
- * Created by jiachenpan on 16/11/18.
- */
+import fs from 'fs'
 
 export function parseTime (time, cFormat) {
   if (arguments.length === 0) {
@@ -62,4 +60,19 @@ export function trimAllSpace (str) {
     throw new Error('str is not a string')
   }
   return str.replace(/\s/g, '')
+}
+
+export async function saveFile ({ filePath, fileName, fileType, fileData, num = 0 }) {
+  const fullPath = num ? `${filePath}/${fileName}(${num}).${fileType}` : `${filePath}/${fileName}.${fileType}`
+  fs.writeFile(fullPath, fileData, { flag: 'ax' }, (err) => {
+    if (!err) {
+      Promise.resolve()
+    } else {
+      if (err.code === 'EEXIST') {
+        this.saveFile({ filePath, fileName, fileType, fileData, num: num + 1 })
+      } else {
+        Promise.reject(err)
+      }
+    }
+  })
 }

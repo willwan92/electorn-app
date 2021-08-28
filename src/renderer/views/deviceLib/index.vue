@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row>
-      <el-col :span="18">
+      <el-col :span="16">
         <el-form :inline="true" size="small">
           <el-form-item>
             <el-select v-model="workplace" placeholder="请选择工作地点">
@@ -16,7 +16,7 @@
           </el-form-item>
         </el-form>
       </el-col>
-      <el-col :span="6" style="text-align: right">
+      <el-col :span="8" style="text-align: right">
         <el-upload
           class="upload"
           action=""
@@ -24,6 +24,13 @@
           :before-upload="handleUpload">
           <el-button size="small" icon="el-icon-upload2" :disabled="isUploading" :loading="isUploading">{{isUploading ? '正在导入' : '导入'}}</el-button>
         </el-upload>
+        <el-button
+          :loading="isExporting"
+          @click="handleExportClick"
+          icon="el-icon-download"
+        >
+          {{ isExporting ? '正在导出' : '导出' }}
+        </el-button>
         <el-button
           type="primary"
           size="small"
@@ -40,6 +47,8 @@
       <el-table-column label="工作地点" width="120" prop="workplace">
       </el-table-column>
       <el-table-column label="设备标识牌名称" prop="deviceName">
+      </el-table-column>
+      <el-table-column label="设备类型" prop="deviceType">
       </el-table-column>
       <el-table-column label="间隔" prop="interval">
       </el-table-column>
@@ -82,6 +91,8 @@
 <script>
 import xlsx from 'node-xlsx'
 import db from '@/database/index'
+import { remote } from 'electron'
+import { saveFile } from '@/utils/index'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -98,6 +109,7 @@ export default {
       pagesize: 10,
       total: 0,
       isUploading: false,
+      isExporting: false,
       isLoading: false
     }
   },
@@ -106,6 +118,57 @@ export default {
     this.fetchTableData()
   },
   methods: {
+    async handleExportClick () {
+      this.isExporting = true
+      let excelData = []
+      let sheetData = []
+      let data = []
+      // 定义列宽
+      const options = {
+        '!cols': [
+          { wch: 60 },
+          { wch: 20 },
+          { wch: 30 }
+        ]
+      }
+      const promises = this.workplaceList.map(async workplace => {
+        sheetData = []
+        data = []
+        data = await db.device
+          .where('workplace')
+          .equals(workplace)
+          .sortBy('interval')
+        sheetData = data.map(item => {
+          return [
+            item.deviceName,
+            item.deviceType,
+            item.interval
+          ]
+        })
+        sheetData.unshift(['设备标识牌名称', '设备类型', '间隔名称'])
+        excelData.push({
+          name: workplace,
+          data: sheetData,
+          options: options
+        })
+      })
+      await Promise.all(promises)
+      const execlBuffer = xlsx.build(excelData)
+      const desktop = remote.app.getPath('desktop')
+      const checkTime = this.$moment(this.checkTime).format('yyyyMMDDHHmmss')
+      saveFile({
+        filePath: desktop,
+        fileName: `设备双编库-${checkTime}`,
+        fileType: 'xlsx',
+        fileData: execlBuffer,
+        num: 0
+      }).then(() => {
+        this.$message.success('设备双编库已保存到桌面')
+      }).catch(err => {
+        this.$message.err(`错误：导出设备双编库出错（${err.message}）`)
+      })
+      this.isExporting = false
+    },
     getWorkplaceList () {
       const workplaceList = localStorage.getItem('workplaceList')
       if (workplaceList) {
@@ -186,43 +249,33 @@ export default {
       const deviceSheets = xlsx.parse(file.path)
       let interval = ''
       let deviceName
+      let deviceType
       let data = []
       // 遍历不同工作地点表格，格式化双编设备数据
       const workplaceList = deviceSheets.map(workplace => {
-        console.log(workplace)
         // 遍历表格中的设备
         workplace.data.forEach((device, index) => {
           // 从第五行开始
-          if (index > 3 && device) {
-            if (device.length > 2) {
+          if (index > 0 && device) {
+            if (device[2]) {
               // 新的间隔
-              interval = device[2]
+              interval = device[2].trim().replace('间隔', '')
+              // if (interval.includes('主变压器')) {
+              //   interval = interval.replace('主变压器', '主变')
+              // }
             }
-            // 一次设备
-            if (device[1]) {
-              deviceName = device[1].trim()
-              deviceName && data.push({
-                interval,
-                workplace: workplace.name,
-                deviceName: deviceName,
-                deviceType: '1次设备'
-              })
-            }
-            // 二次设备
-            if (device[3]) {
-              deviceName = device[3].trim()
-              deviceName && data.push({
-                interval,
-                workplace: workplace.name,
-                deviceName: deviceName,
-                deviceType: '2次设备'
-              })
-            }
+            deviceName = device[0].trim()
+            deviceType = device[1].trim()
+            data.push({
+              interval,
+              deviceName,
+              deviceType,
+              workplace: workplace.name
+            })
           }
         })
         return workplace.name
       })
-      console.log(workplaceList)
       localStorage.setItem('workplaceList', JSON.stringify(workplaceList))
       this.getWorkplaceList()
       // 插入数据库
