@@ -1,5 +1,10 @@
 import _ from 'lodash'
 
+/**
+ * 把字符串转成正则表达式格式的字符串
+ * @param {String} str 需要转换的字符串
+ * @returns {String} 转换后的字符串
+ */
 function escapeSpecialChar (str) {
   const specialChar = /[$()*+.[?\\^{|]/g
   const charList = _.uniq(str.match(specialChar))
@@ -13,6 +18,7 @@ function escapeSpecialChar (str) {
 export const strUtils = {
   /**
    * 判断 source 中是否包含目标字符串 target
+   * target支持输入省略号"..."，省略号代表任意字符。
    * @param { String } source 字符串
    * @param { String } target 目标字符串
    * @returns Boolean
