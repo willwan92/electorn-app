@@ -783,10 +783,13 @@ export default {
       let isIncluded = false
       let deviceName
       let newStep = trimAllSpace(step)
+      // 步骤中的括号统一换成中文的，防止判断是否包含时因括号不同被认为不包含
+      newStep = newStep.replace(/\)/g, '）').replace(/\(/g, '（')
       // 遍历所有双编设备
       if (!deviceList.length) return
       for (let i = 0, len = deviceList.length; i < len; i++) {
         deviceName = trimAllSpace(deviceList[i].deviceName)
+        deviceName = deviceName.replace(/\)/g, '）').replace(/\(/g, '（')
         isIncluded = newStep.includes(deviceName)
         if (isIncluded) break
       }
