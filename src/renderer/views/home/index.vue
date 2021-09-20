@@ -244,10 +244,15 @@ export default {
     async getDeviceList (order) {
       const workplace = order.workplace
       if (workplace !== this.workplace) {
-        this.deviceList = await db.device
+        const deviceList = await db.device
           .where('workplace')
           .equals(workplace)
           .toArray()
+        this.deviceList = deviceList.map(item => {
+          item.deviceName = trimAllSpace(item.deviceName)
+          item.interval = trimAllSpace(item.interval)
+          return item
+        })
         this.workplace = workplace
       }
     },
@@ -788,7 +793,7 @@ export default {
       // 遍历所有双编设备
       if (!deviceList.length) return
       for (let i = 0, len = deviceList.length; i < len; i++) {
-        deviceName = trimAllSpace(deviceList[i].deviceName)
+        deviceName = deviceList[i].deviceName
         deviceName = deviceName.replace(/\)/g, '）').replace(/\(/g, '（')
         isIncluded = newStep.includes(deviceName)
         if (isIncluded) break
@@ -812,16 +817,21 @@ export default {
       }
 
       // 规则2：如果某一步骤中包含kV ，且操作任务中包含所属工作地点的某一个/几个间隔，那么此步骤必须包含上述间隔对应的（双编）
-      // 获取操作步骤的任务名和任务名包含的间隔
+      // 获取操作步骤的任务名、任务名包含的间隔和间隔对应的设备
       let interval
       let intervalList = []
+      let deviceList = []
       if (this.taskName !== order.taskName) {
+        // 操作任务名称在导入操作票是以去除所有空格，此处不必再处理
         const taskName = order.taskName
         this.taskName = taskName
         this.deviceList.forEach(item => {
-          interval = trimAllSpace(item.interval)
-          if (taskName.includes(interval) && !intervalList.includes(interval)) {
-            intervalList.push(interval)
+          interval = item.interval
+          if (taskName.includes(interval)) {
+            deviceList.push(item)
+            if (!intervalList.includes(interval)) {
+              intervalList.push(interval)
+            }
           }
         })
       }
@@ -829,12 +839,7 @@ export default {
       // 遍历间隔，检查步骤中是否包含对应间隔的双编设备
       if (!intervalList.length) return
       let valid = false
-      let deviceList
-      for (let i = 0, len = intervalList.length; i < len; i++) {
-        deviceList = this.deviceList.filter(item => item.interval === intervalList[i])
-        valid = this.validateDevice(step, deviceList)
-        if (valid) break
-      }
+      valid = this.validateDevice(step, deviceList)
       if (!valid) {
         this.addCheckResult({
           order,
