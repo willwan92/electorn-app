@@ -20,6 +20,13 @@
           <el-button size="small" icon="el-icon-upload2">导入</el-button>
         </el-upload>
         <el-button
+          :loading="isExporting"
+          @click="handleExportClick"
+          icon="el-icon-download"
+        >
+          {{ isExporting ? '正在导出' : '导出' }}
+        </el-button>
+        <el-button
           type="primary"
           size="small"
           @click="$refs.editDialog.edit()"
@@ -74,8 +81,9 @@
 
 <script>
 import xlsx from 'node-xlsx'
+import { remote } from 'electron'
 import db from '@/database/index'
-import { trimAllSpace } from '@/utils/index'
+import { trimAllSpace, saveFile } from '@/utils/index'
 import EditDialog from './components/EditDialog'
 
 export default {
@@ -89,6 +97,7 @@ export default {
       currentPage: 1,
       pagesize: 10,
       total: 0,
+      isExporting: false,
       isLoading: false
     }
   },
@@ -160,6 +169,33 @@ export default {
         })
         this.isLoading = false
       }
+    },
+    async handleExportClick () {
+      this.isExporting = true
+      let sheetData = await db.verb.toArray()
+      sheetData = sheetData.map(item => [item.verb, item.nouns.join('、')])
+      sheetData.unshift(['动词', '对应设备'])
+      const options = {
+        '!cols': [
+          { wch: 20 },
+          { wch: 60 }
+        ]
+      }
+      const sheetBuffer = xlsx.build([{name: 'Sheet1', data: sheetData, options: options}])
+      const desktop = remote.app.getPath('desktop')
+      const checkTime = this.$moment(this.checkTime).format('yyyyMMDDHHmmss')
+      saveFile({
+        filePath: desktop,
+        fileName: `动词库-${checkTime}`,
+        fileType: 'xlsx',
+        fileData: sheetBuffer,
+        num: 0
+      }).then(() => {
+        this.$message.success('动词库已保存到桌面')
+      }).catch(err => {
+        this.$message.err(`错误：导出动词库出错（${err.message}）`)
+      })
+      this.isExporting = false
     },
     async handleUpload (file) {
       // 如果表中有数据，先清空
