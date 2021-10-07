@@ -113,6 +113,7 @@ export default {
       simpleRule: [],
       complexRule: [],
       specialSimpleRule: [],
+      specialDevice: [],
       verbs: [],
       workplace: '',
       taskName: '',
@@ -271,6 +272,8 @@ export default {
       this.specialSimpleRule = await db.specialSimpleRule.filter(rule => rule.enable).toArray()
       this.specialComplexRule = await db.specialComplexRule.filter(rule => rule.enable).toArray()
       this.verbs = Object.freeze(await db.verb.toArray())
+      const specialDevice = await db.specialDevice.toArray()
+      this.specialDevice = Object.freeze(specialDevice.map(item => item.deviceName))
       this.checkProgress = 5
       const operatingOrder = Object.freeze(await db.operatingOrder.toArray())
       this.checkProgress = 10
@@ -804,6 +807,17 @@ export default {
      * 检查双编设备
      */
     checkDevice ({ order, stepNum, step }) {
+      // 如果包含特殊设备，不再检查双编设备
+      let isIncluded = false
+      console.log(this.specialDevice)
+      for (let i = 0, len = this.specialDevice.length; i < len; i++) {
+        if (step.includes(this.specialDevice[i])) {
+          isIncluded = true
+          break
+        }
+      }
+      if (isIncluded) return
+
       // 规则1：如果某一步骤中包含kV ，那么此步骤必须包含所属（工作地点）的（双编）
       if (!step.includes('kV')) return
       if (!this.validateDevice(step, this.deviceList)) {

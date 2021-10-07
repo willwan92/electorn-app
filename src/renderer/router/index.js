@@ -109,13 +109,22 @@ export const asyncRoutes = [
   },
   {
     path: '/deviceLib',
+    name: 'deviceLib',
     component: Layout,
+    redirect: '/deviceLib/index',
+    meta: { title: '设备双编', icon: 'device' },
     children: [
       {
         path: 'index',
         name: 'deviceLib',
         component: () => import('@/views/deviceLib/index'),
-        meta: { title: '设备双编库', icon: 'device' }
+        meta: { title: '设备双编库' }
+      },
+      {
+        path: 'spcialDevice',
+        name: 'spcialDevice',
+        component: () => import('@/views/deviceLib/spcialDevice'),
+        meta: { title: '特殊设备' }
       }
     ]
   },
