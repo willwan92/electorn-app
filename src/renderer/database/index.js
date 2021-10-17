@@ -2,8 +2,9 @@ import Dexie from 'dexie'
 
 const db = new Dexie('MainDatabase')
 
-db.version(9).stores({
+db.version(10).stores({
   specialDevice: '++id, &deviceName',
+  taskSpecialDevice: '++id, &deviceName',
   device: '++id, workplace, deviceName, deviceType, interval',
   verb: '++id, &verb, nouns',
   timeRule: 'operator, timeLength',
