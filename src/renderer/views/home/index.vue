@@ -114,6 +114,7 @@ export default {
       complexRule: [],
       specialSimpleRule: [],
       specialDevice: [],
+      taskSpecialDevice: [],
       verbs: [],
       workplace: '',
       taskName: '',
@@ -274,6 +275,8 @@ export default {
       this.verbs = Object.freeze(await db.verb.toArray())
       const specialDevice = await db.specialDevice.toArray()
       this.specialDevice = Object.freeze(specialDevice.map(item => item.deviceName))
+      const taskSpecialDevice = await db.taskSpecialDevice.toArray()
+      this.taskSpecialDevice = Object.freeze(taskSpecialDevice.map(item => item.deviceName))
       this.checkProgress = 5
       const operatingOrder = Object.freeze(await db.operatingOrder.toArray())
       this.checkProgress = 10
@@ -809,7 +812,6 @@ export default {
     checkDevice ({ order, stepNum, step }) {
       // 如果包含特殊设备，不再检查双编设备
       let isIncluded = false
-      console.log(this.specialDevice)
       for (let i = 0, len = this.specialDevice.length; i < len; i++) {
         if (step.includes(this.specialDevice[i])) {
           isIncluded = true
@@ -829,6 +831,16 @@ export default {
           errorMsg: '通用规则：双编错误'
         })
       }
+
+      // 如果操作任务包含特殊设备，不再检查双编间隔
+      let isIncluded2 = false
+      for (let i = 0, len = this.taskSpecialDevice.length; i < len; i++) {
+        if (order.taskName.includes(this.taskSpecialDevice[i])) {
+          isIncluded2 = true
+          break
+        }
+      }
+      if (isIncluded2) return
 
       // 规则2：如果某一步骤中包含kV ，且操作任务中包含所属工作地点的某一个/几个间隔，那么此步骤必须包含上述间隔对应的（双编）
       // 获取操作步骤的任务名、任务名包含的间隔和间隔对应的设备
