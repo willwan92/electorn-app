@@ -10,12 +10,12 @@
         <el-input v-model="form.name" autocomplete="off"></el-input>
       </el-form-item>
       <el-form-item
-        label="操作步骤"
+        label="校验步骤"
         prop="step"
         :rules="[{
-          required: true, message: '请选择操作步骤', trigger: 'blur'
+          required: true, message: '请选择校验步骤', trigger: 'blur'
         }]">
-        <el-select v-model="form.step" placeholder="请选择操作步骤">
+        <el-select v-model="form.step" placeholder="请选择校验步骤">
           <el-option
             v-for="(val, key) in stepOptions"
             :label="val"
