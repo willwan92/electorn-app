@@ -12,6 +12,7 @@ const condPosOptions = {
 
 const stepOptions = {
   'all': '所有步骤',
+  'any': '存在一个步骤',
   'first': '任务的第一步',
   'last': '任务的最后一步',
   'sub-first': '母步骤',

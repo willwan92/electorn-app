@@ -48,6 +48,21 @@
         <el-button class="btn-del" v-else icon="el-icon-minus" @click="handleRemoveCondKeyword(index)" type="danger" circle></el-button>
       </el-form-item>
       <el-form-item
+        label="校验步骤"
+        prop="step"
+        :rules="[{
+          required: true, message: '请选择校验步骤', trigger: 'blur'
+        }]">
+        <el-select v-model="form.step" placeholder="请选择校验步骤">
+          <el-option
+            v-for="(val, key) in stepOptions"
+            :label="val"
+            :key="key"
+            :value="key"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item
         label="校验逻辑"
         prop="operator"
         :rules="[{
@@ -88,7 +103,7 @@
 </template>
 
 <script>
-import { operatorOptions } from '@/utils/constant'
+import { operatorOptions, stepOptions } from '@/utils/constant'
 import db from '@/database/index'
 export default {
   name: 'EditDialog',
@@ -98,6 +113,7 @@ export default {
       dialogFormVisible: false,
       isSubmiting: false,
       operatorOptions: Object.freeze(operatorOptions),
+      stepOptions: Object.freeze(stepOptions),
       workplaceList: [],
       form: {
         name: '',
@@ -106,6 +122,7 @@ export default {
           operator: 'in',
           keywords: ['']
         },
+        step: '',
         operator: '',
         keywords: [''],
         errorMsg: ''

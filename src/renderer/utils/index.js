@@ -76,3 +76,73 @@ export async function saveFile ({ filePath, fileName, fileType, fileData, num = 
     }
   })
 }
+
+/**
+ * 获取一个操作票的所有步骤中的指定的步骤
+ * @param {Array} steps 一个操作票的所有步骤
+ * @param {String} type 指定的类型
+  'all': '所有步骤',
+  'any': '存在一个步骤',
+  'first': '任务的第一步',
+  'last': '任务的最后一步',
+  'sub-first': '母步骤',
+  'other': '其他步骤（除了母步骤、第一步和最后一步）'
+ */
+export function getSelectedSteps (steps, type) {
+  if (type === 'all' || type === 'any') {
+    return steps
+  }
+
+  let res = []
+  if (type === 'first') {
+    res.push(steps[0])
+    return res
+  }
+
+  const len = steps.length
+  if (type === 'last') {
+    const lastStep = steps[len - 1]
+    if (!Array.isArray(lastStep)) {
+      res.push(lastStep)
+    } else {
+      const subLen = lastStep.length
+      res.push(lastStep[subLen - 1])
+    }
+    return res
+  }
+
+  // 获取母步骤或其他步骤（除了母步骤、第一步和最后一步）
+  let step
+  for (let i = 1; i < len; i++) {
+    step = steps[i]
+    if (type === 'sub-first') {
+      if (Array.isArray(step)) {
+        // 母步骤
+        res.push(step[0])
+      }
+    }
+
+    if (type === 'other') {
+      if (Array.isArray(step)) {
+        for (let j = 1, length = step.length; j < length; j++) {
+          if (i !== len - 1) {
+            // 其他步骤
+            res.push(step[j])
+          } else {
+            if (j !== length - 1) {
+              // 其他步骤
+              res.push(step[j])
+            }
+          }
+        }
+      } else {
+        if (i !== len - 1) {
+          // 其他步骤
+          res.push(step[i])
+        }
+      }
+    }
+  }
+
+  return res
+}

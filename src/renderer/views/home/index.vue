@@ -87,7 +87,7 @@ import fs from 'fs'
 import { remote } from 'electron'
 import db from '@/database/index'
 import { strUtils } from '@/utils/check'
-import { trimAllSpace } from '@/utils/index'
+import { trimAllSpace, getSelectedSteps } from '@/utils/index'
 
 export default {
   name: 'home',
@@ -614,30 +614,30 @@ export default {
           // 任务符合规则的任务条件和工作站点
           const operator = rule.operator
           const keywords = rule.keywords
-          const steps = order.steps
-          const isIn = operator === 'in'
+          const steps = getSelectedSteps(order.steps, rule.step)
           let step
           let stepNum = ''
           let stepTmp = ''
           let valid = false
-          // 遍历操作票所有步骤
+          const isAnyStep = rule.step === 'any'
+          // 遍历规则所选步骤
           for (let idx = 0, len = steps.length; idx < len; idx++) {
-            step = steps[idx].step
+            step = steps[idx]
             stepTmp = step
             if (!Array.isArray(step)) {
               // 非子步骤
-              valid = this.validateStr(step, operator, keywords)
-              if (isIn) {
-                // 如果校验逻辑是包含，有一个步骤符合关键字条件则跳出循环（符合规则）
+              valid = this.validateStr(step.step, operator, keywords)
+              if (isAnyStep) {
+                // 如果校验步骤是存在一个步骤，符合关键字条件则跳出循环
                 if (valid) break
               } else {
-                // 如果校验逻辑不是包含，需要遍历所有步骤
+                // 如果不是，需要遍历所有步骤
                 if (!valid) {
                   stepNum = steps[idx].stepNum
                   this.addCheckResult({
                     order,
                     stepNum,
-                    step: stepNum ? stepTmp : '',
+                    step: stepNum ? stepTmp.step : '',
                     errorMsg: `专用规则：${rule.errorMsg}`
                   })
                 }
@@ -648,20 +648,20 @@ export default {
               let subStep
               for (let subIdx = 0, len = step.length; subIdx < len; subIdx++) {
                 // 子步骤
-                subStep = step[subIdx].step
+                subStep = step[subIdx]
                 stepTmp = subStep
-                valid = this.validateStr(subStep, operator, keywords)
-                if (isIn) {
-                  // 如果校验逻辑是包含，有一个步骤符合关键字条件则跳出循环（符合规则）
+                valid = this.validateStr(subStep.step, operator, keywords)
+                if (isAnyStep) {
+                  // 如果校验步骤是存在一个步骤，符合关键字条件则跳出循环
                   if (valid) break
                 } else {
-                  // 如果校验逻辑不是包含，需要遍历所有步骤
+                  // 如果不是，需要遍历所有步骤
                   if (!valid) {
-                    stepNum = step[subIdx].stepNum
+                    stepNum = subStep.stepNum
                     this.addCheckResult({
                       order,
                       stepNum,
-                      step: stepNum ? stepTmp : '',
+                      step: stepNum ? stepTmp.step : '',
                       errorMsg: `专用规则：${rule.errorMsg}`
                     })
                   }
@@ -671,12 +671,12 @@ export default {
               }
             }
           }
-          // 校验逻辑是包含时
+          // 如果校验步骤是存在一个步骤
           if (!valid) {
             this.addCheckResult({
               order,
               stepNum,
-              step: stepNum ? stepTmp : '',
+              step: stepNum ? stepTmp.step : '',
               errorMsg: `专用规则：${rule.errorMsg}`
             })
           }

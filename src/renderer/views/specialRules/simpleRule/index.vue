@@ -55,6 +55,11 @@
       </el-table-column>
       <el-table-column label="任务名称条件" prop="taskCondition">
       </el-table-column>
+      <el-table-column label="校验步骤">
+        <span slot-scope="scope">
+          {{ stepOptions[scope.row.step] }}
+        </span>
+      </el-table-column>
       <el-table-column label="校验逻辑" prop="operator">
       </el-table-column>
       <el-table-column label="校验关键字">
@@ -110,7 +115,7 @@ import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
 import EditDialog from './components/EditDialog'
-import { condOperatorOptions, checkOperatorOptions } from '@/utils/constant'
+import { condOperatorOptions, checkOperatorOptions, stepOptions } from '@/utils/constant'
 
 export default {
   components: {
@@ -118,6 +123,7 @@ export default {
   },
   data () {
     return {
+      stepOptions: Object.freeze(stepOptions),
       tableData: [],
       name: '',
       currentPage: 1,
