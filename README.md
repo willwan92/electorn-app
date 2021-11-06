@@ -2,11 +2,6 @@
 
 > An electron-vue project
 
-#### Todo List
-
-1. 设备双编库修改及规则校验，工作地点需要存储，方便共用(8h)
-2.  检查过程性能优化，并增加进度条
-
 #### Build Setup
 
 ``` bash

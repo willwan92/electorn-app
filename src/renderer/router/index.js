@@ -94,6 +94,12 @@ export const asyncRoutes = [
         meta: { title: '简单规则' }
       },
       {
+        path: 'simpleRuleEdit',
+        hidden: true,
+        meta: { title: '专用简单规则-编辑' },
+        component: () => import('@/views/specialRules/simpleRule/simpleRuleEdit'),
+      },
+      {
         path: 'complexRule',
         name: 'complexRule',
         component: () => import('@/views/specialRules/complexRule/index'),

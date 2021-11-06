@@ -31,7 +31,7 @@
         <el-button
           type="primary"
           size="small"
-          @click="$refs.editDialog.edit()"
+          @click="$router.push('/specialRules/simpleRuleEdit')"
           icon="el-icon-plus">
           新建
         </el-button>
@@ -53,40 +53,27 @@
       </el-table-column>
       <el-table-column label="工作地点" prop="workplace">
       </el-table-column>
-      <el-table-column label="任务名称条件" prop="taskCondition">
+      <el-table-column label="任务名称条件" prop="taskConditions">
       </el-table-column>
-      <el-table-column label="校验步骤">
-        <span slot-scope="scope">
-          {{ stepOptions[scope.row.step] }}
-        </span>
+      <el-table-column label="校验步骤" prop="step">
       </el-table-column>
-      <el-table-column label="校验逻辑" prop="operator">
-      </el-table-column>
-      <el-table-column label="校验关键字">
-        <template slot-scope="scope">
-          <div>
-            <span v-for="(item, index) in scope.row.keywords" :key="item">
-              <el-divider v-if="index > 0"  direction="vertical"></el-divider>
-              {{ item }}
-            </span>
-          </div>
-        </template>
+      <el-table-column label="校验规则" prop="rules">
       </el-table-column>
       <el-table-column label="错误信息" prop="errorMsg">
       </el-table-column>
       <el-table-column fixed="right"
         label="操作"
         width="150">
-      <template slot-scope="scope">
+      <template slot-scope="{ row }">
         <el-button
-          @click.native.prevent="$refs.editDialog.edit(scope.row)"
+          @click.native.prevent="$router.push(`/specialRules/simpleRuleEdit?id=${row.id}`)"
           type="primary"
           plain
           size="mini">
           编辑
         </el-button>
         <el-button
-          @click.native.prevent="deleteRow(scope.row)"
+          @click.native.prevent="deleteRow(row)"
           type="danger"
           plain
           size="mini">
@@ -105,8 +92,6 @@
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 10px;">
     </el-pagination>
-
-    <edit-dialog ref="editDialog" @ok="fetchTableData" />
   </div>
 </template>
 
@@ -114,13 +99,10 @@
 import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
-import EditDialog from './components/EditDialog'
+import { stringifyKeywords } from '@/utils/index'
 import { condOperatorOptions, checkOperatorOptions, stepOptions } from '@/utils/constant'
 
 export default {
-  components: {
-    EditDialog
-  },
   data () {
     return {
       stepOptions: Object.freeze(stepOptions),
@@ -254,9 +236,41 @@ export default {
         .toArray()
 
       data = data.map(rule => {
-        rule.taskCondition = `${condOperatorOptions[rule.taskCondition.operator]}：${rule.taskCondition.keywords.join('或')}`
+        // 任务名称条件
+        let taskConditions = ''
+        rule.taskConditions.forEach((item, index) => {
+          if (index > 0) {
+            taskConditions += '且'
+          }
+          taskConditions += condOperatorOptions[item.operator]
+          taskConditions += stringifyKeywords(item.keywords)
+          if (index !== rule.taskConditions.length - 1) {
+            taskConditions += '，'
+          }
+        })
+        rule.taskConditions = taskConditions
+
+        // 校验规则
+        let rules = ''
+        rule.rules.forEach((item, index) => {
+          if (index > 0) {
+            rules += '且'
+          }
+          rules += checkOperatorOptions[item.operator]
+          item.keywords.forEach((item, index) => {
+            if (index === 0) {
+              rules += ` “${item}” `
+            } else {
+              rules += ` 或 “${item}” `
+            }
+          })
+          if (index !== rule.rules.length - 1) {
+            rules += '，'
+          }
+        })
+        rule.rules = rules
+        rule.step = stepOptions[rule.step]
         rule.workplace = rule.workplace.length === 0 ? '所有站点' : rule.workplace.join('、')
-        rule.operator = checkOperatorOptions[rule.operator]
         return rule
       })
       if (data.length === 0 && this.currentPage > 1) {

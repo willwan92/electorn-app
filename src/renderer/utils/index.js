@@ -146,3 +146,20 @@ export function getSelectedSteps (steps, type) {
 
   return res
 }
+
+export function stringifyKeywords (keywords) {
+  let str = ''
+  if (!Array.isArray(keywords)) {
+    return str
+  }
+
+  keywords.forEach((item, index) => {
+    if (index === 0) {
+      str += ` “${item}” `
+    } else {
+      str += ` 或 “${item}” `
+    }
+  })
+
+  return str
+}

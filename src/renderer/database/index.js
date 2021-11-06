@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 
 const db = new Dexie('MainDatabase')
 
-db.version(11).stores({
+db.version(12).stores({
   specialDevice: '++id, &deviceName',
   taskSpecialDevice: '++id, &deviceName',
   device: '++id, workplace, deviceName, deviceType, interval',
@@ -11,8 +11,8 @@ db.version(11).stores({
   nameRule: 'operator, keywords',
   simpleRule: '++id, name, enable, step, operator, keywords, errorMsg',
   complexRule: '++id, name, enable, conditions, position, positionNum, stepType, operator, keywords, errorMsg',
-  specialSimpleRule: '++id, name, enable, taskCondition, workplace, step, operator, keywords, errorMsg',
-  specialComplexRule: '++id, name, enable, taskCondition, workplace, conditions, position, positionNum, stepType, operator, keywords, errorMsg',
+  specialSimpleRule: '++id, name, enable, taskConditions, workplace, step, rules, errorMsg',
+  specialComplexRule: '++id, name, enable, taskConditions, workplace, conditions, position, positionNum, stepType, rules, errorMsg',
   operatingOrder: 'id, num, taskName, workplace, steps, startTime, endTime',
   checkResult: '++id, num, taskName, workplace, stepNum, step, errorMsg, *checkTime',
   checkResultSummary: '++id, checkTime, operatingOrderAmount, stepAmount'

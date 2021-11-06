@@ -53,23 +53,13 @@
       </el-table-column>
       <el-table-column label="工作地点" prop="workplace">
       </el-table-column>
-      <el-table-column label="任务名称条件" prop="taskCondition">
+      <el-table-column label="任务名称条件" prop="taskConditions">
       </el-table-column>
       <el-table-column label="步骤筛选条件" prop="conditionsText">
       </el-table-column>
       <el-table-column label="校验步骤" prop="position">
       </el-table-column>
-      <el-table-column label="校验逻辑" prop="operator">
-      </el-table-column>
-      <el-table-column label="校验关键字">
-        <template slot-scope="scope">
-          <div>
-            <span v-for="(item, index) in scope.row.keywords" :key="item">
-              <el-divider v-if="index > 0"  direction="vertical"></el-divider>
-              {{ item }}
-            </span>
-          </div>
-        </template>
+      <el-table-column label="校验规则" prop="rules">
       </el-table-column>
       <el-table-column label="报错信息" prop="errorMsg">
       </el-table-column>
@@ -111,7 +101,8 @@
 import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
-import { operatorOptions, positionOptions, condOperatorOptions, condPosOptions } from '@/utils/constant'
+import { positionOptions, condOperatorOptions, checkOperatorOptions, condPosOptions } from '@/utils/constant'
+import { stringifyKeywords } from '@/utils/index'
 
 export default {
   data () {
@@ -254,36 +245,61 @@ export default {
 
       data = data.map(rule => {
         rule.workplace = rule.workplace.length === 0 ? '所有站点' : rule.workplace.join('、')
-        rule.taskCondition = `${condOperatorOptions[rule.taskCondition.operator]}：${rule.taskCondition.keywords.join('或')}`
 
-        let conditionsText = ''
-        rule.operator = operatorOptions.find(item => {
-          return item.value === rule.operator
-        })['label']
-        if (rule.position !== 'current' && rule.positionNum > 0) {
-          rule.position = `${positionOptions[rule.position]}${rule.positionNum}步之内`
-        } else {
-          rule.position = positionOptions[rule.position]
-        }
+        // 任务名称条件
+        let taskConditions = ''
+        rule.taskConditions.forEach((item, index) => {
+          if (index > 0) {
+            taskConditions += '且'
+          }
+          taskConditions += condOperatorOptions[item.operator]
+          taskConditions += stringifyKeywords(item.keywords)
+          if (index !== rule.taskConditions.length - 1) {
+            taskConditions += '，'
+          }
+        })
+        rule.taskConditions = taskConditions
 
         // 步骤条件
+        let conditionsText = ''
         rule.conditions.forEach((item, index) => {
           if (index === 0) {
             conditionsText += condOperatorOptions[item.operator]
-            conditionsText += item.keywords.join('或')
+            conditionsText += stringifyKeywords(item.keywords)
           } else {
             conditionsText += condPosOptions[item.position]
             if (item.position !== 'current') {
               conditionsText += `${item.positionNum}步之内`
             }
             conditionsText += condOperatorOptions[item.operator]
-            conditionsText += item.keywords.join('或')
+            conditionsText += stringifyKeywords(item.keywords)
           }
           if (index !== rule.conditions.length - 1) {
             conditionsText += '，'
           }
         })
         rule.conditionsText = conditionsText
+
+        // 校验步骤
+        if (rule.position !== 'current' && rule.positionNum > 0) {
+          rule.position = `${positionOptions[rule.position]}${rule.positionNum}步之内`
+        } else {
+          rule.position = positionOptions[rule.position]
+        }
+
+        // 校验规则
+        let rules = ''
+        rule.rules.forEach((item, index) => {
+          if (index > 0) {
+            rules += '且'
+          }
+          rules += checkOperatorOptions[item.operator]
+          rules += stringifyKeywords(item.keywords)
+          if (index !== rule.rules.length - 1) {
+            rules += '，'
+          }
+        })
+        rule.rules = rules
         return rule
       })
       if (data.length === 0 && this.currentPage > 1) {
