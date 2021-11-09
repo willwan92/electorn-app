@@ -29,7 +29,7 @@
           v-if="index === 0" type="primary"
           class="conditions-btn"
           circle=""
-          @click="addCondition(form.taskConditions)"
+          @click="addTaskNameCondition(form.taskConditions)"
           icon="el-icon-plus"
           size="mini"></el-button>
         <el-button
@@ -71,7 +71,7 @@
         v-if="index === 0" type="primary"
         class="conditions-btn"
         circle=""
-        @click="addStepCondition"
+        @click="addCondition(form.conditions)"
         icon="el-icon-plus"
         size="mini"></el-button>
       <el-button
@@ -85,7 +85,7 @@
       </span>
       <span v-if="index !== 0">
         <el-form-item label="">
-          <el-select v-model="condition.position" @change="handleCondPosChange(index)">
+          <el-select v-model="condition.position" @change="handleCondPosChange(form.conditions, index)">
             <el-option
               v-for="(val, key) in condPosOptions"
               :label="val"
@@ -137,77 +137,86 @@
         </span>
       </template>
     </div>
-    <!-- 校验步骤 -->
-    <div>
-      <el-form-item label="校验步骤">
-        <el-select v-model="form.position" @change="handlePositionChange">
-          <el-option
-            v-for="(val, key) in positionOptions"
-            :label="val"
-            :key="key"
-            :value="key"
-          ></el-option>
-        </el-select>
-      </el-form-item>
-      <span v-show="form.position !== 'current'">
-        <el-form-item
-          prop="positionNum"
-          :rules="[{
-            validator: validatStepNum, trigger: 'blur'
-          }]">
-          <el-input type="number" v-model="form.positionNum" placeholder="不填代表之前/后所有步骤">
-            <template slot="append">步</template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="">
-          <el-select v-model="form.stepType">
-            <el-option value="notChild" label="非子步骤"></el-option>
-            <el-option value="child" label="子步骤"></el-option>
-          </el-select>
-        </el-form-item>
-      </span>
-    </div>
     <!-- 校验规则 -->
-    <div v-for="(rule, index) in form.rules" class="condition" :key="`rule-${index}`">
+    <div v-for="(condition, index) in form.rules" class="condition" :key="`rule-${index}`">
       <span class="label">
         <el-button
-          v-if="index === 0" type="primary"
-          class="conditions-btn"
-          circle=""
-          @click="addCondition(form.rules)"
-          icon="el-icon-plus"
-          size="mini"></el-button>
-        <el-button
-          v-else type="danger"
-          class="conditions-btn"
-          circle=""
-          @click="removeCondition(form.rules, index)"
-          icon="el-icon-minus"
-          size="mini"></el-button>
-          校验规则 {{index + 1 }}
+        v-if="index === 0" type="primary"
+        class="conditions-btn"
+        circle=""
+        @click="addCondition(form.rules)"
+        icon="el-icon-plus"
+        size="mini"></el-button>
+      <el-button
+        v-else type="danger"
+        class="conditions-btn"
+        circle=""
+        @click="removeCondition(form.rules, index)"
+        icon="el-icon-minus"
+        size="mini"></el-button>
+        校验规则 {{index + 1 }}
       </span>
+      <!-- <span v-if="index !== 0"> -->
+        <el-form-item label="">
+          <el-select  v-if="index === 0" v-model="condition.position" @change="handleCondPosChange(form.rules, index)">
+            <el-option
+              v-for="(val, key) in positionOptions"
+              :label="val"
+              :key="key"
+              :value="key"
+            ></el-option>
+          </el-select>
+          <el-select  v-else v-model="condition.position" @change="handleCondPosChange(form.rules, index)">
+            <el-option
+              v-for="(val, key) in condPosOptions"
+              :label="val"
+              :key="key"
+              :value="key"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <span v-show="condition.position !== 'current'">
+          <el-form-item
+            :prop="`rules.${index}.positionNum`"
+            :rules="[{
+              validator: validatStepNum, trigger: 'blur'
+            }]">
+            <el-input type="number" v-model="condition.positionNum" placeholder="不填代表之前/后所有步骤">
+              <template slot="append">步</template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="">
+            <el-select v-model="condition.stepType">
+              <el-option value="notChild" label="非子步骤"></el-option>
+              <el-option value="child" label="子步骤"></el-option>
+            </el-select>
+          </el-form-item>
+        </span>
+      <!-- </span> -->
       <el-form-item>
-        <el-select v-model="rule.operator" placeholder="">
+        <el-select v-model="condition.operator" placeholder="">
           <el-option
-            v-for="item in operatorOptions.filter(item => item.value !== 'equalToTaskName')"
+            v-for="item in operatorOptions"
             :label="item.label"
             :key="item.value"
             :value="item.value"
           ></el-option>
         </el-select>
       </el-form-item>
-      <span v-for="(item, kwIndex) in rule.keywords" class="keyword-wrapper" :key="kwIndex">
-        <el-form-item
-          :prop="`rules.${index}.keywords.${kwIndex}`"
-          :rules="[{
-            required: true, message: '请输入关键字', trigger: 'blur'
-          }]">
-          <span v-if="kwIndex !== 0">或</span>
-          <el-input v-model="rule.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
-        </el-form-item>
-        <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.rules[index].keywords)" circle></el-button>
-        <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.rules[index].keywords, kwIndex)" type="danger" circle></el-button>
-      </span>
+      <template v-if="condition.operator !== 'equalToTaskName'">
+        <span v-for="(item, kwIndex) in condition.keywords" class="keyword-wrapper" :key="kwIndex">
+          <el-form-item
+            :prop="`rules.${index}.keywords.${kwIndex}`"
+            :rules="[{
+              required: true, message: '请输入关键字', trigger: 'blur'
+            }]">
+            <span v-if="kwIndex !== 0">或</span>
+            <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
+          </el-form-item>
+          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.rules[index].keywords)" circle></el-button>
+          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.rules[index].keywords, kwIndex)" type="danger" circle></el-button>
+        </span>
+      </template>
     </div>
     <el-form-item
       label="报错信息"
@@ -255,11 +264,11 @@ export default {
             keywords: ['']
           }
         ],
-        position: 'current',
-        positionNum: '',
-        stepType: 'notChild',
         rules: [
           {
+            position: 'current',
+            positionNum: '',
+            stepType: 'notChild',
             operator: 'in',
             keywords: ['']
           }
@@ -330,8 +339,8 @@ export default {
         }
       })
     },
-    handleCondPosChange (index) {
-      const condition = this.form.conditions[index]
+    handleCondPosChange (conditions, index) {
+      const condition = conditions[index]
       if (condition.position === 'current') {
         condition.positionNum = ''
       }
@@ -341,8 +350,8 @@ export default {
         this.form.positionNum = ''
       }
     },
-    addStepCondition () {
-      this.form.conditions.push({
+    addCondition (target) {
+      target.push({
         position: 'current',
         stepType: 'notChild',
         positionNum: '',
@@ -353,7 +362,7 @@ export default {
     removeCondition (target, index) {
       target.splice(index, 1)
     },
-    addCondition (target) {
+    addTaskNameCondition (target) {
       target.push({
         operator: 'in',
         keywords: ['']
