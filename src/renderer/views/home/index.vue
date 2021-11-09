@@ -507,11 +507,11 @@ export default {
      * 校验复杂规则
      */
     validateComplexRule ({ order, rule, stepIndex, subIndex = undefined }) {
-      // 遍历规则中所有条件
       let stepNum
       let step
       let isMatched = true
       let condition
+      // 遍历规则中所有步骤条件
       for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
         condition = rule.conditions[cIndex]
         isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
@@ -582,8 +582,9 @@ export default {
       const rules = this.specialComplexRule
       // 遍历专用复杂规则
       rules.forEach(rule => {
-        const taskKeywords = rule.taskCondition.keywords
-        const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
+        // const taskKeywords = rule.taskCondition.keywords
+        // const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatched = this.validateRules(order.taskName, rule.taskConditions)
         const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
         if (isMatched && isMatchedWorkplace) {
           // 任务符合规则的任务条件和工作站点
@@ -600,6 +601,15 @@ export default {
         }
       })
     },
+    validateRules (str, rules) {
+      let valid = true
+      if (!Array.isArray(rules)) return valid
+      for (let i = 0, len = rules.length; i < len; i++) {
+        valid = this.validateStr(str, rules[i].operator, rules[i].keywords)
+        if (!valid) break
+      }
+      return valid
+    },
     /**
      * 校验专用简单规则
      */
@@ -607,13 +617,10 @@ export default {
       const rules = this.specialSimpleRule
       // 遍历规则
       rules.forEach(rule => {
-        const taskKeywords = rule.taskCondition.keywords
-        const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatched = this.validateRules(order.taskName, rule.taskConditions)
         const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
         if (isMatched && isMatchedWorkplace) {
           // 任务符合规则的任务条件和工作站点
-          const operator = rule.operator
-          const keywords = rule.keywords
           const steps = getSelectedSteps(order.steps, rule.step)
           let step
           let stepNum = ''
@@ -626,7 +633,7 @@ export default {
             stepTmp = step
             if (!Array.isArray(step)) {
               // 非子步骤
-              valid = this.validateStr(step.step, operator, keywords)
+              valid = this.validateRules(step.step, rule.rules)
               if (isAnyStep) {
                 // 如果校验步骤是存在一个步骤，符合关键字条件则跳出循环
                 if (valid) break
@@ -650,7 +657,7 @@ export default {
                 // 子步骤
                 subStep = step[subIdx]
                 stepTmp = subStep
-                valid = this.validateStr(subStep.step, operator, keywords)
+                valid = this.validateRules(subStep.step, rule.rules)
                 if (isAnyStep) {
                   // 如果校验步骤是存在一个步骤，符合关键字条件则跳出循环
                   if (valid) break
