@@ -63,7 +63,7 @@
       </el-table-column>
       <el-table-column fixed="right"
         label="操作"
-        width="150">
+        width="216">
       <template slot-scope="scope">
         <el-button
           plain
@@ -71,6 +71,13 @@
           type="primary"
           size="mini">
           编辑
+        </el-button>
+        <el-button
+          @click.native.prevent="handleCopyClick(scope.row)"
+          type="primary"
+          plain
+          size="mini">
+          复制
         </el-button>
         <el-button
           @click.native.prevent="deleteRow(scope.row)"
@@ -124,6 +131,19 @@ export default {
     })
   },
   methods: {
+    async handleCopyClick (row) {
+      const rule = await db.specialComplexRule.get(row.id)
+      delete rule.id
+      await db.specialComplexRule
+        .add(rule)
+        .then(() => {
+          this.$message.success(`复制规则“${rule.name}”成功！`)
+          this.fetchTableData()
+        })
+        .catch(err => {
+          this.$message.error(`錯誤：${err.message || err}`)
+        })
+    },
     async toggleSelectRow (selection, row) {
       const isSelected = selection.includes(row)
       db.specialComplexRule

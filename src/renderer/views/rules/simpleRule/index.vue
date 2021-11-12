@@ -59,7 +59,7 @@
       </el-table-column>
       <el-table-column fixed="right"
         label="操作"
-        width="150">
+        width="216">
       <template slot-scope="{ row }">
         <el-button
           @click.native.prevent="$router.push(`/rules/simpleRuleEdit?id=${row.id}`)"
@@ -67,6 +67,13 @@
           plain
           size="mini">
           编辑
+        </el-button>
+        <el-button
+          @click.native.prevent="handleCopyClick(row)"
+          type="primary"
+          plain
+          size="mini">
+          复制
         </el-button>
         <el-button
           @click.native.prevent="deleteRow(row)"
@@ -121,6 +128,19 @@ export default {
     })
   },
   methods: {
+    async handleCopyClick (row) {
+      const rule = await db.simpleRule.get(row.id)
+      delete rule.id
+      await db.simpleRule
+        .add(rule)
+        .then(() => {
+          this.$message.success(`复制规则“${rule.name}”成功！`)
+          this.fetchTableData()
+        })
+        .catch(err => {
+          this.$message.error(`錯誤：${err.message || err}`)
+        })
+    },
     async toggleSelectRow (selection, row) {
       const isSelected = selection.includes(row)
       row.enable = isSelected
