@@ -52,19 +52,7 @@
       </el-table-column>
       <el-table-column label="步骤筛选条件" prop="conditionsText">
       </el-table-column>
-      <el-table-column label="校验步骤" prop="position">
-      </el-table-column>
-      <el-table-column label="校验逻辑" prop="operator">
-      </el-table-column>
-      <el-table-column label="校验关键字">
-        <template slot-scope="scope">
-          <div>
-            <span v-for="(item, index) in scope.row.keywords" :key="item">
-              <el-divider v-if="index > 0"  direction="vertical"></el-divider>
-              {{ item }}
-            </span>
-          </div>
-        </template>
+      <el-table-column label="校验规则" prop="rules">
       </el-table-column>
       <el-table-column label="报错信息" prop="errorMsg">
       </el-table-column>
@@ -106,7 +94,8 @@
 import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
-import { operatorOptions, positionOptions, condOperatorOptions, condPosOptions } from '@/utils/constant'
+import { positionOptions, condOperatorOptions, checkOperatorOptions, condPosOptions } from '@/utils/constant'
+import { stringifyKeywords } from '@/utils/index'
 
 export default {
   data () {
@@ -248,34 +237,41 @@ export default {
         .toArray()
 
       data = data.map(rule => {
-        let conditionsText = ''
-        rule.operator = operatorOptions.find(item => {
-          return item.value === rule.operator
-        })['label']
-        if (rule.position !== 'current' && rule.positionNum > 0) {
-          rule.position = `${positionOptions[rule.position]}${rule.positionNum}步之内`
-        } else {
-          rule.position = positionOptions[rule.position]
-        }
-
         // 步骤条件
+        let conditionsText = ''
         rule.conditions.forEach((item, index) => {
           if (index === 0) {
             conditionsText += condOperatorOptions[item.operator]
-            conditionsText += item.keywords.join('或')
+            conditionsText += stringifyKeywords(item.keywords)
           } else {
             conditionsText += condPosOptions[item.position]
             if (item.position !== 'current') {
               conditionsText += `${item.positionNum}步之内`
             }
             conditionsText += condOperatorOptions[item.operator]
-            conditionsText += item.keywords.join('或')
+            conditionsText += stringifyKeywords(item.keywords)
           }
           if (index !== rule.conditions.length - 1) {
             conditionsText += '，'
           }
         })
         rule.conditionsText = conditionsText
+
+        // 校验规则
+        let rulesText = ''
+        rule.rules.forEach((item, index) => {
+          rulesText += index === 0 ? positionOptions[item.position] : `且${positionOptions[item.position]}`
+          if (item.positionNum) {
+            rulesText += `${item.positionNum}步之内`
+          }
+          rulesText += checkOperatorOptions[item.operator]
+          rulesText += stringifyKeywords(item.keywords)
+          if (index !== rule.rules.length - 1) {
+            rulesText += '，'
+          }
+        })
+        rule.rules = rulesText
+
         return rule
       })
       if (data.length === 0 && this.currentPage > 1) {

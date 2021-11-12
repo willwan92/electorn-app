@@ -67,6 +67,12 @@ export const asyncRoutes = [
         meta: { title: '步骤简单规则' }
       },
       {
+        path: 'simpleRuleEdit',
+        hidden: true,
+        meta: { title: '步骤简单规则-编辑' },
+        component: () => import('@/views/rules/simpleRule/simpleRuleEdit'),
+      },
+      {
         path: 'complexRule',
         name: 'complexRule',
         component: () => import('@/views/rules/complexRule/index'),

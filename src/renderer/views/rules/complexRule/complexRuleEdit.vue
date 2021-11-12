@@ -1,5 +1,5 @@
 <template>
-  <el-form :model="form" ref="form" label-width="130px" label-position="right" :inline="true">
+  <el-form :model="form" ref="form" label-width="155px" label-position="right" :inline="true">
     <el-form-item
       label="规则名称"
       prop="name"
@@ -15,7 +15,7 @@
         v-if="index === 0" type="primary"
         class="conditions-btn"
         circle=""
-        @click="addCondition"
+        @click="addCondition(form.conditions)"
         icon="el-icon-plus"
         size="mini"></el-button>
       <el-button
@@ -29,7 +29,7 @@
       </span>
       <span v-if="index !== 0">
         <el-form-item label="">
-          <el-select v-model="condition.position" @change="handleCondPosChange(index)">
+          <el-select v-model="condition.position" @change="handleCondPosChange(form.conditions, index)">
             <el-option
               v-for="(val, key) in condPosOptions"
               :label="val"
@@ -76,15 +76,32 @@
             <span v-if="kwIndex !== 0">或</span>
             <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
           </el-form-item>
-          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(index)" circle></el-button>
-          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(index, kwIndex)" type="danger" circle></el-button>
+          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.conditions[index].keywords)" circle></el-button>
+          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.conditions[index].keywords, kwIndex)" type="danger" circle></el-button>
         </span>
       </template>
-      
     </div>
-    <div>
-      <el-form-item label="校验步骤">
-        <el-select v-model="form.position" @change="handlePositionChange">
+    <!-- 校验规则 -->
+    <div v-for="(condition, index) in form.rules" class="condition" :key="`rule-${index}`">
+      <span class="label">
+        <el-button
+        v-if="index === 0" type="primary"
+        class="conditions-btn"
+        circle=""
+        @click="addCondition(form.rules)"
+        icon="el-icon-plus"
+        size="mini"></el-button>
+      <el-button
+        v-else type="danger"
+        class="conditions-btn"
+        circle=""
+        @click="removeCondition(form.rules, index)"
+        icon="el-icon-minus"
+        size="mini"></el-button>
+        校验规则 {{index + 1 }}
+      </span>
+      <el-form-item label="">
+        <el-select v-model="condition.position" @change="handleCondPosChange(form.rules, index)">
           <el-option
             v-for="(val, key) in positionOptions"
             :label="val"
@@ -93,27 +110,25 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <span v-show="form.position !== 'current'">
+      <span v-show="condition.position !== 'current'">
         <el-form-item
-          prop="positionNum"
+          :prop="`rules.${index}.positionNum`"
           :rules="[{
             validator: validatStepNum, trigger: 'blur'
           }]">
-          <el-input type="number" v-model.number="form.positionNum" placeholder="不填代表之前/后所有步骤">
-            <template slot="append">步</template>
+          <el-input type="number" v-model="condition.positionNum" placeholder="不填代表之前/后所有步骤">
+            <template slot="append">步之内</template>
           </el-input>
         </el-form-item>
         <el-form-item label="">
-          <el-select v-model="form.stepType">
+          <el-select v-model="condition.stepType">
             <el-option value="notChild" label="非子步骤"></el-option>
             <el-option value="child" label="子步骤"></el-option>
           </el-select>
         </el-form-item>
       </span>
-    </div>
-    <div>
-      <el-form-item label="校验逻辑" prop="operator">
-        <el-select v-model="form.operator" placeholder="">
+      <el-form-item>
+        <el-select v-model="condition.operator" placeholder="">
           <el-option
             v-for="item in operatorOptions"
             :label="item.label"
@@ -122,20 +137,20 @@
           ></el-option>
         </el-select>
       </el-form-item>
-    </div>
-    <div class="keyword-wrapper">
-      <el-form-item
-        v-for="(item, index) in form.keywords"
-        :key="index"
-        :label="index === 0 ? '校验关键字' : ''"
-        :prop="`keywords.${index}`"
-        :rules="[{
-          required: true, message: '请输入关键字', trigger: 'blur'
-        }]">
-        <el-input v-model="form.keywords[index]" placeholder="请输入关键字"></el-input>
-        <el-button v-if="index === 0" icon="el-icon-plus" @click="addCheckKeyword" circle></el-button>
-        <el-button v-else icon="el-icon-minus" @click="removeCheckKeyword(index)" type="danger" circle></el-button>
-      </el-form-item>
+      <template v-if="condition.operator !== 'equalToTaskName'">
+        <span v-for="(item, kwIndex) in condition.keywords" class="keyword-wrapper" :key="kwIndex">
+          <el-form-item
+            :prop="`rules.${index}.keywords.${kwIndex}`"
+            :rules="[{
+              required: true, message: '请输入关键字', trigger: 'blur'
+            }]">
+            <span v-if="kwIndex !== 0">或</span>
+            <el-input v-model="condition.keywords[kwIndex]" placeholder="请输入关键字"></el-input>
+          </el-form-item>
+          <el-button v-if="kwIndex === 0" icon="el-icon-plus" @click="handleAddKeyword(form.rules[index].keywords)" circle></el-button>
+          <el-button v-else icon="el-icon-minus" @click="handleRemoveKeyword(form.rules[index].keywords, kwIndex)" type="danger" circle></el-button>
+        </span>
+      </template>
     </div>
     <el-form-item
       label="报错信息"
@@ -148,7 +163,7 @@
     <br>
     <el-form-item label=" ">
       <el-button type="primary" :disabled="isSubmiting" :loading="isSubmiting" @click="handleSubmit">确 定</el-button>
-      <el-button @click="$router.push('/rules/complexRule')">返 回</el-button>
+      <el-button @click="$router.push('/rules/complexRule')">取 消</el-button>
     </el-form-item>
   </el-form>
 </template>
@@ -176,11 +191,16 @@ export default {
             keywords: ['']
           }
         ],
-        position: 'current',
-        positionNum: '',
-        stepType: 'notChild',
-        operator: 'in',
-        keywords: ['']
+        rules: [
+          {
+            position: 'current',
+            positionNum: '',
+            stepType: 'notChild',
+            operator: 'in',
+            keywords: ['']
+          }
+        ],
+        errorMsg: ''
       }
     }
   },
@@ -242,8 +262,8 @@ export default {
         }
       })
     },
-    handleCondPosChange (index) {
-      const condition = this.form.conditions[index]
+    handleCondPosChange (conditions, index) {
+      const condition = conditions[index]
       if (condition.position === 'current') {
         condition.positionNum = ''
       }
@@ -253,8 +273,8 @@ export default {
         this.form.positionNum = ''
       }
     },
-    addCondition () {
-      this.form.conditions.push({
+    addCondition (target) {
+      target.push({
         position: 'current',
         stepType: 'notChild',
         positionNum: '',
@@ -271,11 +291,11 @@ export default {
     removeCheckKeyword (kwIndex) {
       this.form.keywords.splice(kwIndex, 1)
     },
-    handleAddKeyword (index) {
-      this.form.conditions[index].keywords.push('')
+    handleAddKeyword (target) {
+      target.push('')
     },
-    handleRemoveKeyword (index, kwIndex) {
-      this.form.conditions[index].keywords.splice(kwIndex, 1)
+    handleRemoveKeyword (target, index) {
+      target.splice(index, 1)
     }
   }
 }
@@ -283,8 +303,11 @@ export default {
 
 <style lang="scss" scoped>
 .el-form {
+  .el-textarea {
+    width: 442px;
+  }
   .el-select {
-    width: 188px;
+    width: 240px;
   }
   .keyword-wrapper {
     line-height: 32px;
@@ -302,10 +325,10 @@ export default {
   }
   .condition {
     position: relative;
-    padding-left: 130px;
+    padding-left: 155px;
     .label {
       position: absolute;
-      left: 26px;
+      left: 51px;
       font-size: 14px;
       color: #606266;
       line-height: 32px;

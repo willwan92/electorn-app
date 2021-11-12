@@ -59,7 +59,7 @@
       </el-table-column>
       <el-table-column label="校验规则" prop="rules">
       </el-table-column>
-      <el-table-column label="错误信息" prop="errorMsg">
+      <el-table-column label="报错信息" prop="errorMsg">
       </el-table-column>
       <el-table-column fixed="right"
         label="操作"

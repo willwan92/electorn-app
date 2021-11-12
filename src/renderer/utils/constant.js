@@ -1,5 +1,5 @@
 const positionOptions = {
-  current: '目标步骤（满足条件的）',
+  current: '目标步骤中',
   before: '在目标步骤之前',
   after: '在目标步骤之后'
 }

@@ -507,11 +507,11 @@ export default {
      * 校验复杂规则
      */
     validateComplexRule ({ order, rule, stepIndex, subIndex = undefined }) {
-      // 遍历规则中所有条件
       let stepNum
       let step
       let isMatched = true
       let condition
+      // 遍历规则中所有步骤条件
       for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
         condition = rule.conditions[cIndex]
         isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
@@ -528,21 +528,28 @@ export default {
           }
         }
       }
-      if (isMatched) {
-        // 满足所有条件，执行校验规则
-        if (!this.validateCondition(rule, order, stepIndex, subIndex)) {
-          const errorMsg = rule.taskCondition ? `专用规则：${rule.errorMsg}` : `通用规则：${rule.errorMsg}`
-          this.addCheckResult({
-            order,
-            stepNum,
-            step,
-            errorMsg
-          })
+      if (isMatched) { // 满足所有步骤条件
+        let valid = true
+        let ruleItem
+        // 遍历当前规则的所有校验规则
+        for (let rIndex = 0, len = rule.rules.length; rIndex < len; rIndex++) {
+          ruleItem = rule.rules[rIndex]
+          valid = this.validateCondition(ruleItem, order, stepIndex, subIndex)
+          if (!valid) {
+            const errorMsg = rule.taskCondition ? `专用规则：${ruleItem.errorMsg}` : `通用规则：${ruleItem.errorMsg}`
+            this.addCheckResult({
+              order,
+              stepNum,
+              step,
+              errorMsg
+            })
+            break
+          }
         }
       }
     },
     /**
-     * 遍历步骤复杂规则
+     * 遍历步骤复杂规则（通用规则）
      */
     traverseComplexRule ({ order, stepIndex, subIndex = undefined }) {
       const rules = this.complexRule
@@ -582,11 +589,9 @@ export default {
       const rules = this.specialComplexRule
       // 遍历专用复杂规则
       rules.forEach(rule => {
-        const taskKeywords = rule.taskCondition.keywords
-        const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatched = this.validateRules(order.taskName, rule.taskConditions)
         const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
-        if (isMatched && isMatchedWorkplace) {
-          // 任务符合规则的任务条件和工作站点
+        if (isMatched && isMatchedWorkplace) { // 符合任务名称条件和工作站点
           // 遍历操作票中的步骤
           order.steps.forEach((step, stepIndex) => {
             if (!Array.isArray(step)) {
@@ -601,19 +606,28 @@ export default {
       })
     },
     /**
+     * 验证字符串是否符合一组校验规则
+     */
+    validateRules (str, rules) {
+      let valid = true
+      if (!Array.isArray(rules)) return valid
+      for (let i = 0, len = rules.length; i < len; i++) {
+        valid = this.validateStr(str, rules[i].operator, rules[i].keywords)
+        if (!valid) break
+      }
+      return valid
+    },
+    /**
      * 校验专用简单规则
      */
     validateSpecialRule (order) {
       const rules = this.specialSimpleRule
       // 遍历规则
       rules.forEach(rule => {
-        const taskKeywords = rule.taskCondition.keywords
-        const isMatched = this.validateStr(order.taskName, rule.taskCondition.operator, taskKeywords)
+        const isMatched = this.validateRules(order.taskName, rule.taskConditions)
         const isMatchedWorkplace = rule.workplace.length > 0 ? rule.workplace.includes(order.workplace) : true
         if (isMatched && isMatchedWorkplace) {
           // 任务符合规则的任务条件和工作站点
-          const operator = rule.operator
-          const keywords = rule.keywords
           const steps = getSelectedSteps(order.steps, rule.step)
           let step
           let stepNum = ''
@@ -626,7 +640,7 @@ export default {
             stepTmp = step
             if (!Array.isArray(step)) {
               // 非子步骤
-              valid = this.validateStr(step.step, operator, keywords)
+              valid = this.validateRules(step.step, rule.rules)
               if (isAnyStep) {
                 // 如果校验步骤是存在一个步骤，符合关键字条件则跳出循环
                 if (valid) break
@@ -650,7 +664,7 @@ export default {
                 // 子步骤
                 subStep = step[subIdx]
                 stepTmp = subStep
-                valid = this.validateStr(subStep.step, operator, keywords)
+                valid = this.validateRules(subStep.step, rule.rules)
                 if (isAnyStep) {
                   // 如果校验步骤是存在一个步骤，符合关键字条件则跳出循环
                   if (valid) break
@@ -683,6 +697,9 @@ export default {
         }
       })
     },
+    /**
+     * 检查通用规则（包含步骤简单规则、双编设备规则、和步骤复杂规则）
+     */
     async validateCommonRule ({ order, stepIndex, subIndex = undefined }) {
       let step
       let stepNum
@@ -875,6 +892,9 @@ export default {
         })
       }
     },
+    /**
+     * 检查步骤（遍历所有操作票的所有步骤）
+     */
     async checkSteps (order) {
       const promises = order.steps.map(async (step, stepIndex) => {
         if (!Array.isArray(step)) {

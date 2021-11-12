@@ -57,8 +57,6 @@
       </el-table-column>
       <el-table-column label="步骤筛选条件" prop="conditionsText">
       </el-table-column>
-      <el-table-column label="校验步骤" prop="position">
-      </el-table-column>
       <el-table-column label="校验规则" prop="rules">
       </el-table-column>
       <el-table-column label="报错信息" prop="errorMsg">
@@ -280,26 +278,21 @@ export default {
         })
         rule.conditionsText = conditionsText
 
-        // 校验步骤
-        if (rule.position !== 'current' && rule.positionNum > 0) {
-          rule.position = `${positionOptions[rule.position]}${rule.positionNum}步之内`
-        } else {
-          rule.position = positionOptions[rule.position]
-        }
-
         // 校验规则
-        let rules = ''
+        let rulesText = ''
         rule.rules.forEach((item, index) => {
-          if (index > 0) {
-            rules += '且'
+          rulesText += index === 0 ? positionOptions[item.position] : `且${positionOptions[item.position]}`
+          if (item.positionNum) {
+            rulesText += `${item.positionNum}步之内`
           }
-          rules += checkOperatorOptions[item.operator]
-          rules += stringifyKeywords(item.keywords)
+          rulesText += checkOperatorOptions[item.operator]
+          rulesText += stringifyKeywords(item.keywords)
           if (index !== rule.rules.length - 1) {
-            rules += '，'
+            rulesText += '，'
           }
         })
-        rule.rules = rules
+        rule.rules = rulesText
+
         return rule
       })
       if (data.length === 0 && this.currentPage > 1) {
