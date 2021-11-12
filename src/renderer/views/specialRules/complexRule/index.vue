@@ -312,7 +312,6 @@ export default {
           }
         })
         rule.rules = rulesText
-
         return rule
       })
       if (data.length === 0 && this.currentPage > 1) {

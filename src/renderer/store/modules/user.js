@@ -7,7 +7,7 @@ const user = {
     name: 'admin',
     password: 'admin',
     isLogin: false,
-    menuRoutes: constantRouterMap,
+    menuRoutes: constantRouterMap.concat(asyncRoutes),
     avatar: '',
     roles: []
   },

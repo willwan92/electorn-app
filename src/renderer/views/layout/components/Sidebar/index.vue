@@ -1,7 +1,7 @@
 <template>
   <scroll-bar>
     <div class="logo-wrapper">
-      <img class="logo" :src="logoImg" alt="logo">
+      <!-- <img class="logo" :src="logoImg" alt="logo"> -->
     </div>
     <el-menu
       mode="vertical"
