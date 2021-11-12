@@ -198,18 +198,6 @@ export default {
     handleRemoveKeyword (target, index) {
       target.splice(index, 1)
     },
-    handleAddCondKeyword () {
-      this.form.taskConditions.push('')
-    },
-    handleRemoveCondKeyword (index) {
-      this.form.taskConditions.keywords.splice(index, 1)
-    },
-    handleAddCheckKeyword () {
-      this.form.keywords.push('')
-    },
-    handleRemoveCheckKeyword (index) {
-      this.form.keywords.splice(index, 1)
-    },
     handleSubmit () {
       // 防止重复提交
       if (this.isSubmiting) return
