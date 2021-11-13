@@ -143,9 +143,8 @@ export default {
     },
     async toggleSelectRow (selection, row) {
       const isSelected = selection.includes(row)
-      row.enable = isSelected
       db.simpleRule
-        .update(row.id, row)
+        .update(row.id, { enable: isSelected })
         .then(() => {
           this.$message.success(`规则 ${row.name} ${isSelected ? '已启用' : '已禁用'}`)
         })
@@ -157,9 +156,8 @@ export default {
       const isSelectAll = selection.length > 0
       const promises = await this.tableData.map(row => {
         if (row.enable !== isSelectAll) {
-          row.enable = isSelectAll
           db.simpleRule
-            .update(row.id, row)
+            .update(row.id, { enable: isSelectAll })
             .catch(err => {
               this.$message.error(`错误：${err.message}`)
             })
