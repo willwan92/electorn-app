@@ -87,10 +87,13 @@ import db from '@/database/index'
 export default {
   name: 'simpleRuleEdit',
   data () {
+    // 步骤简单规则删除“存在一个步骤”选项
+    const _stepOption = Object.assign({}, stepOptions)
+    delete _stepOption.any
     return {
       isSubmiting: false,
       operatorOptions: Object.freeze(operatorOptions),
-      stepOptions: Object.freeze(stepOptions),
+      stepOptions: Object.freeze(_stepOption),
       form: {
         name: '',
         step: '',
