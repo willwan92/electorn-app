@@ -722,6 +722,8 @@ export default {
                 }
               }
             }
+            // 如果校验步骤是存在一个步骤符合关键字条件，也要跳出外层循环
+            if (isAnyStep && valid) break
           }
           // 如果校验步骤是存在一个步骤
           if (!valid) {
