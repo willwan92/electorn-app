@@ -22,7 +22,7 @@
         v-else type="danger"
         class="conditions-btn"
         circle=""
-        @click="removeCondition(index)"
+        @click="removeCondition(form.conditions, index)"
         icon="el-icon-minus"
         size="mini"></el-button>
         步骤条件 {{ index + 1 }}
@@ -282,8 +282,8 @@ export default {
         keywords: ['']
       })
     },
-    removeCondition (index) {
-      this.form.conditions.splice(index, 1)
+    removeCondition (target, index) {
+      target.splice(index, 1)
     },
     addCheckKeyword () {
       this.form.keywords.push('')
