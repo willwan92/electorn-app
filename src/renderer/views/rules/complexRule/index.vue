@@ -101,7 +101,7 @@
 import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
-import { positionOptions, condOperatorOptions, checkOperatorOptions, condPosOptions } from '@/utils/constant'
+import { positionOptions, condOperatorOptions, checkOperatorOptions, condPosOptions, stepTypeOptions } from '@/utils/constant'
 import { stringifyKeywords } from '@/utils/index'
 
 export default {
@@ -266,7 +266,7 @@ export default {
           } else {
             conditionsText += condPosOptions[item.position]
             if (item.position !== 'current') {
-              conditionsText += `${item.positionNum}步之内`
+              conditionsText += `${item.positionNum}步${item.stepType !== 'match' ? ('(' + stepTypeOptions[item.stepType] + ')') : ''}之内`
             }
             conditionsText += condOperatorOptions[item.operator]
             conditionsText += stringifyKeywords(item.keywords)

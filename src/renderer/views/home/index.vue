@@ -352,7 +352,7 @@ export default {
     /**
      * 校验步骤是否符合指定条件
      */
-    validateCondition (condition, order, stepIndex, subIndex) {
+    validateCondition (condition, order, stepIndex, subIndex, conditionStepType) {
       let isMatched = true
       let step
       if (condition.position === 'current') {
@@ -368,7 +368,7 @@ export default {
         let len = Number(condition.positionNum)
         if (len > 0) {
           // 之前的指定几步
-          if (condition.stepType === 'notChild') {
+          if (conditionStepType === 'notChild') {
             // 遍历指定的步骤
             let min = stepIndex - len
             // 防止用户指定的超出
@@ -390,7 +390,7 @@ export default {
                 if (!isMatched) break
               }
             }
-          } else if (condition.stepType === 'child' && subIndex) {
+          } else if (conditionStepType === 'child' && subIndex) {
             // 遍历指定的步骤
             let min = subIndex - len
             // 防止用户指定的超出
@@ -413,7 +413,7 @@ export default {
           }
         } else if (len === 0) {
           // 之前所有步骤
-          if (condition.stepType === 'notChild') {
+          if (conditionStepType === 'notChild') {
             // 遍历指定的步骤
             for (let i = stepIndex - 1; i >= 0; i--) {
               step = order.steps[i].step
@@ -431,7 +431,7 @@ export default {
                 if (!isMatched) break
               }
             }
-          } else if (condition.stepType === 'child' && subIndex) {
+          } else if (conditionStepType === 'child' && subIndex) {
             // 遍历指定的步骤
             for (let i = subIndex - 1; i >= 0; i--) {
               step = order.steps[stepIndex][i].step
@@ -455,7 +455,7 @@ export default {
         let len = Number(condition.positionNum)
         if (len > 0) {
           // 之后的指定几步
-          if (condition.stepType === 'notChild') {
+          if (conditionStepType === 'notChild') {
             const length = order.steps.length
             let max = stepIndex + len + 1
             // 防止用户指定的超出
@@ -477,7 +477,7 @@ export default {
                 if (!isMatched) break
               }
             }
-          } else if (condition.stepType === 'child' && subIndex) {
+          } else if (conditionStepType === 'child' && subIndex) {
             // 遍历指定的步骤
             const length = order.steps[stepIndex].length
             let max = subIndex + len + 1
@@ -502,7 +502,7 @@ export default {
           }
         } else if (len === 0) {
           // 之后所有步骤
-          if (condition.stepType === 'notChild') {
+          if (conditionStepType === 'notChild') {
             // 遍历指定的步骤
             for (let i = stepIndex + 1, max = order.steps.length; i < max; i++) {
               step = order.steps[i].step
@@ -520,7 +520,7 @@ export default {
                 if (!isMatched) break
               }
             }
-          } else if (condition.stepType === 'child' && subIndex) {
+          } else if (conditionStepType === 'child' && subIndex) {
             // 遍历指定的步骤
             for (let i = subIndex + 1, max = order.steps[stepIndex].length; i < max; i++) {
               step = order.steps[stepIndex][i].step
@@ -548,22 +548,28 @@ export default {
     validateComplexRule ({ order, rule, stepIndex, subIndex = undefined }) {
       let stepNum
       let step
+      let targetStepType
+      let conditionStepType
       let isMatched = true
       let condition
       // 遍历规则中所有步骤条件
       for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
+
         condition = rule.conditions[cIndex]
-        isMatched = this.validateCondition(condition, order, stepIndex, subIndex)
+        conditionStepType = (condition.stepType === match && cIndex !== 0) ? targetStepType : condition.stepType;
+        isMatched = this.validateCondition(condition, order, stepIndex, subIndex, conditionStepType)
         // 不满足条件，跳出循环
         if (!isMatched) break
-        // 记录符合第一个条件的步骤号
+        // 记录符合第一个条件的步骤号和步骤类型
         if (cIndex === 0) {
           if (subIndex === undefined) {
             step = order.steps[stepIndex].step
             stepNum = order.steps[stepIndex].stepNum
+            targetStepType = 'child'
           } else {
             step = order.steps[stepIndex][subIndex].step
             stepNum = order.steps[stepIndex][subIndex].stepNum
+            targetStepType = 'notChild'
           }
         }
       }
@@ -573,7 +579,7 @@ export default {
         // 遍历当前规则的所有校验规则
         for (let rIndex = 0, len = rule.rules.length; rIndex < len; rIndex++) {
           ruleItem = rule.rules[rIndex]
-          valid = this.validateCondition(ruleItem, order, stepIndex, subIndex)
+          valid = this.validateCondition(ruleItem, order, stepIndex, subIndex, conditionStepType)
           if (!valid) {
             const errorMsg = rule.taskConditions ? `专用规则：${rule.errorMsg}` : `通用规则：${rule.errorMsg}`
             this.addCheckResult({
