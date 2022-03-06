@@ -55,7 +55,7 @@
       </el-table-column>
       <el-table-column label="任务名称条件" prop="taskConditions">
       </el-table-column>
-      <el-table-column label="步骤筛选条件" prop="conditionsText">
+      <el-table-column label="目标步骤筛选条件" prop="conditionsText">
       </el-table-column>
       <el-table-column label="校验规则" prop="rules">
       </el-table-column>
@@ -106,7 +106,7 @@
 import db from '@/database/index'
 import fs from 'fs'
 import { remote } from 'electron'
-import { positionOptions, condOperatorOptions, checkOperatorOptions, condPosOptions } from '@/utils/constant'
+import { positionOptions, condOperatorOptions, checkOperatorOptions, condPosOptions, stepTypeOptions } from '@/utils/constant'
 import { stringifyKeywords } from '@/utils/index'
 
 export default {
@@ -287,7 +287,7 @@ export default {
           } else {
             conditionsText += condPosOptions[item.position]
             if (item.position !== 'current') {
-              conditionsText += `${item.positionNum}步之内`
+              conditionsText += `${item.positionNum}步${item.stepType !== 'match' ? ('(' + stepTypeOptions[item.stepType] + ')') : ''}之内`
             }
             conditionsText += condOperatorOptions[item.operator]
             conditionsText += stringifyKeywords(item.keywords)
@@ -303,7 +303,7 @@ export default {
         rule.rules.forEach((item, index) => {
           rulesText += index === 0 ? positionOptions[item.position] : `且${positionOptions[item.position]}`
           if (item.positionNum) {
-            rulesText += `${item.positionNum}步之内`
+            rulesText += `${item.positionNum}步${item.stepType !== 'match' ? ('(' + stepTypeOptions[item.stepType] + ')') : ''}之内`
           }
           rulesText += checkOperatorOptions[item.operator]
           rulesText += stringifyKeywords(item.keywords)

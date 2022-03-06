@@ -106,8 +106,13 @@
           </el-form-item>
           <el-form-item label="">
             <el-select v-model="condition.stepType">
-              <el-option value="notChild" label="非子步骤"></el-option>
-              <el-option value="child" label="子步骤"></el-option>
+              <el-option
+                v-for="(val, key) in stepTypeOptions"
+                :label="val"
+                :key="key"
+                :value="key"
+                :title="key === 'match' ? '匹配和目标步骤类型相同的步骤' : ''"
+              ></el-option>
             </el-select>
           </el-form-item>
         </span>
@@ -178,8 +183,13 @@
         </el-form-item>
         <el-form-item label="">
           <el-select v-model="condition.stepType">
-            <el-option value="notChild" label="非子步骤"></el-option>
-            <el-option value="child" label="子步骤"></el-option>
+            <el-option
+              v-for="(val, key) in stepTypeOptions"
+              :label="val"
+              :key="key"
+              :value="key"
+              :title="key === 'match' ? '匹配和目标步骤类型相同的步骤' : ''"
+            ></el-option>
           </el-select>
         </el-form-item>
       </span>
@@ -225,7 +235,7 @@
 </template>
 
 <script>
-import { operatorOptions, positionOptions, condPosOptions } from '@/utils/constant'
+import { operatorOptions, positionOptions, condPosOptions, stepTypeOptions } from '@/utils/constant'
 import { validatPositiveInt } from '@/utils/validate'
 import db from '@/database/index'
 export default {
@@ -236,6 +246,7 @@ export default {
       operatorOptions: Object.freeze(operatorOptions),
       positionOptions: Object.freeze(positionOptions),
       condPosOptions: Object.freeze(condPosOptions),
+      stepTypeOptions: Object.freeze(stepTypeOptions),
       form: {
         name: '',
         workplace: [],
@@ -246,9 +257,10 @@ export default {
           }
         ],
         conditions: [
+          // 第一条件的步骤类型不可指定
           {
             position: 'current',
-            stepType: 'notChild',
+            stepType: '',
             positionNum: '',
             operator: 'in',
             keywords: ['']
@@ -258,7 +270,7 @@ export default {
           {
             position: 'current',
             positionNum: '',
-            stepType: 'notChild',
+            stepType: 'match',
             operator: 'in',
             keywords: ['']
           }
@@ -344,7 +356,7 @@ export default {
     addCondition (target) {
       target.push({
         position: 'current',
-        stepType: 'notChild',
+        stepType: 'match',
         positionNum: '',
         operator: 'in',
         keywords: ['']
