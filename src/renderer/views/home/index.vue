@@ -332,7 +332,7 @@ export default {
      * @param keywords { String[] } 要校验的关键字
      */
     validateStr (step, operator, keywords) {
-      if (!step) return true
+      if (!step) return false
       let valid = false
       const isNotIn = operator === 'notIn'
       const validate = strUtils[operator]
@@ -554,9 +554,8 @@ export default {
       let condition
       // 遍历规则中所有步骤条件
       for (let cIndex = 0, len = rule.conditions.length; cIndex < len; cIndex++) {
-
         condition = rule.conditions[cIndex]
-        conditionStepType = (condition.stepType === match && cIndex !== 0) ? targetStepType : condition.stepType;
+        conditionStepType = condition.stepType === 'match' ? targetStepType : condition.stepType
         isMatched = this.validateCondition(condition, order, stepIndex, subIndex, conditionStepType)
         // 不满足条件，跳出循环
         if (!isMatched) break
@@ -565,11 +564,11 @@ export default {
           if (subIndex === undefined) {
             step = order.steps[stepIndex].step
             stepNum = order.steps[stepIndex].stepNum
-            targetStepType = 'child'
+            targetStepType = 'notChild'
           } else {
             step = order.steps[stepIndex][subIndex].step
             stepNum = order.steps[stepIndex][subIndex].stepNum
-            targetStepType = 'notChild'
+            targetStepType = 'child'
           }
         }
       }

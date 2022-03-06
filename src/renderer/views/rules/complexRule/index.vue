@@ -50,7 +50,7 @@
       </el-table-column>
       <el-table-column label='规则名称' prop="name">
       </el-table-column>
-      <el-table-column label="步骤筛选条件" prop="conditionsText">
+      <el-table-column label="目标步骤筛选条件" prop="conditionsText">
       </el-table-column>
       <el-table-column label="校验规则" prop="rules">
       </el-table-column>
@@ -282,7 +282,7 @@ export default {
         rule.rules.forEach((item, index) => {
           rulesText += index === 0 ? positionOptions[item.position] : `且${positionOptions[item.position]}`
           if (item.positionNum) {
-            rulesText += `${item.positionNum}步之内`
+            rulesText += `${item.positionNum}步${item.stepType !== 'match' ? ('(' + stepTypeOptions[item.stepType] + ')') : ''}之内`
           }
           rulesText += checkOperatorOptions[item.operator]
           rulesText += stringifyKeywords(item.keywords)

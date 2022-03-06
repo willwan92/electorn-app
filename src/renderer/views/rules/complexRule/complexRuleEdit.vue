@@ -196,6 +196,7 @@ export default {
         conditions: [
           {
             position: 'current',
+            // 第一条件的步骤类型不可指定
             stepType: '',
             positionNum: '',
             operator: 'in',
