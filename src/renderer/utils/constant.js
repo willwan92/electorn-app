@@ -5,9 +5,9 @@ const positionOptions = {
 }
 
 const condPosOptions = {
-  current: '且此步骤',
-  before: '且此步骤之前',
-  after: '且此步骤之后'
+  current: '且目标步骤中',
+  before: '且目标步骤之前',
+  after: '且目标步骤之后'
 }
 
 const stepOptions = {
@@ -69,7 +69,14 @@ const operatorOptions = [
   }
 ]
 
+const stepTypeOptions = {
+  match: '智能匹配步骤类型',
+  notChild: '非子步骤',
+  child: '子步骤'
+}
+
 export {
+  stepTypeOptions,
   condOperatorOptions,
   checkOperatorOptions,
   positionOptions,
